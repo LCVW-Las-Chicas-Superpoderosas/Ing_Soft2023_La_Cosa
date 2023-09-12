@@ -1,3 +1,3 @@
 Initial Commit
 
-* Grupo Chicas Super Poderosas *
+* Grupo Chicas Super Poderosas
