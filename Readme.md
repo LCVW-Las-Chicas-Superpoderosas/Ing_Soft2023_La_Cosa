@@ -8,7 +8,9 @@
         Instalacion pyenv: https://realpython.com/intro-to-pyenv/   
     (Leer bien y seguir paso a paso...)
 
-* Instalacion de requerimientos: pip install -r requirements.txt
+* Instalacion de requerimientos:
+  
+      pip install -r requirements.txt
 
 * Correr hello_world:
   
