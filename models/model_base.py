@@ -1,72 +1,141 @@
-from players.models import Player
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from datetime import datetime
 
+import mysql.connector
+from pony.orm import Database, PrimaryKey, Required, Set, commit, select, db_session
 
-# Add corresponding url for your database.
-DATABASE_URL = "sqlite:///mydatabase.db"
-
-# Crea una instancia de la clase base de declaraciones SQLAlchemy
-Base = declarative_base()
+DATABASE_URL = "localhost"
+MYSQL_USER = 'root'
 
 
 class ModelBase:
-    def __init__(self):
-        # Crea la instancia de la base de datos SQLAlchemy
-        self.engine = create_engine(DATABASE_URL)
-        SessionLocal = sessionmaker(
-            autocommit=False, autoflush=False, bind=self.engine)
+    def __init__(self, database_url):
+        self.database_url = database_url
+        try:
+            # Try to connect to the existing database
+            self.db = Database(
+                provider='mysql',
+                host=self.database_url,
+                user=MYSQL_USER,
+                passwd=MYSQL_USER,
+                db='ing_2023'
+            )
+        except Exception:
+            # If the database does not exist, create it
+            self.create_mysql_database()
 
-        self.db = SessionLocal()
+    def initialize_database(self):
+        class Card(self.db.Entity):
+            id = PrimaryKey(int, auto=True)
+            name = Required(str, unique=True, index=True)
+            description = Required(str, unique=True, index=True)
+            games = Set("Game")
 
-    def generate_tables(self):
-        '''
-            When you call Base.metadata.create_all(bind=engine), 
-            SQLAlchemy looks at the classes that inherit from Base 
-            and generates the necessary SQL statements to create the
-            corresponding database table(s).
-        '''
-        self.Base.metadata.create_all(bind=self.engine)
+        # Define entities and generate mapping for all of them
+        class Game(self.db.Entity):
+            id = PrimaryKey(int, auto=True)
+            name = Required(str, unique=True, index=True)
+            password = Required(str)
+            created_at = Required(datetime, default=datetime.utcnow)
+            chats = Set("Chat")
+            cards = Required(Card)
 
-    def drop_tables(self):
-        '''Drop all tables... BE CAREFUL!!!'''
-        self.Base.metadata.drop_all(bind=self.engine)
+        class Chat(self.db.Entity):
+            id = PrimaryKey(int, auto=True)
+            game = Required(Game)
+            message = Required(str, unique=True, index=True)
 
-    def add_record(self, record):
-        '''Add record to the DB'''
-        self.db.add(record)
-        self.db.commit()
-        self.db.refresh(record)
+        class Player(self.db.Entity):
+            id = PrimaryKey(int, auto=True)
+            name = Required(str, unique=True, index=True)
+            created_at = Required(datetime, default=datetime.utcnow)
 
-    def get_record_by_id(self, model, id):
-        return self.db.query(model).filter_by(id=id).first()
+        # Generate mapping for all entities (including Player)
+        self.db.generate_mapping(create_tables=True)
+        self.Player = Player
+        self.Card = Card
+        self.Game = Game
+        self.Chat = Chat
 
-    # def update_record(self, record):
-    #     self.db.commit()
+    def create_mysql_database(self):
+        try:
+            # Connect to MySQL server (assumes root user with no password)
+            connection = mysql.connector.connect(
+                host=self.database_url,
+                user=MYSQL_USER,
+                passwd=MYSQL_USER)
+
+            # Create a cursor object to execute SQL commands
+            cursor = connection.cursor()
+
+            # Create the database if it doesn't exist
+            cursor.execute("CREATE DATABASE IF NOT EXISTS ing_2023")
+
+            # Close the cursor and the connection
+            cursor.close()
+            connection.close()
+        except Exception as e:
+            raise Exception(f"Error creating MySQL database: {e}")
+
+    def add_record(self, entity_cls, **kwargs):
+        try:
+            entity = entity_cls(**kwargs)
+            commit()
+            return entity
+        except Exception as e:
+            raise Exception(f"Error adding record: {e}")
+
+    def get_record_by_value(self, entity_cls, **kwargs):
+        try:
+            # Initialize the query with the entity class
+            query = select(c for c in entity_cls)
+
+            # Add conditions based on the key-value pairs in kwargs
+            for key, value in kwargs.items():
+                query = query.filter(lambda c: getattr(c, key) == value)
+
+            # Retrieve the first matching record or None
+            record = query.first()
+            return record
+
+        except Exception as e:
+            print(f"Error retrieving record: {e}")
+            return None
+
+    def update_record(self, record):
+        try:
+            commit()
+        except Exception as e:
+            raise Exception(f"Error updating record: {e}")
 
     def delete_record(self, record):
-        self.db.delete(record)
-        self.db.commit()
+        try:
+            record.delete()
+            commit()
+        except Exception as e:
+            raise Exception(f"Error deleting record: {e}")
 
-# Ejemplo de uso:
+
 if __name__ == "__main__":
-    model_base = ModelBase()
+    model_base = ModelBase(DATABASE_URL)
+    model_base.initialize_database()
 
-    # Crear tabla de usuarios
-    model_base.create_table()
+    # Example of usage:
 
-    # Crear un nuevo usuario
-    new_player = Player(username="john_doe", email="john@example.com")
-    model_base.add_record(new_player)
+    # Create a new player
+    with db_session:
+        model_base.add_record(model_base.Player, id=32, name="aaa", created_at=datetime.utcnow())
 
-    # Leer un usuario por ID
-    user = model_base.get_record_by_id(Player, 1)
-    print(user.username, user.email)
+        # Read a player by ID
+        user = model_base.get_record_by_value(model_base.Player, name="aaa", id=32)
+        if user:
+            print(user.name, user.created_at)
+        else:
+            print("User not found")
+        if user:
+            # Modify a player
+            user.name = "new_username"
+            model_base.update_record(user)
 
-    # Modificar un usuario
-    user.name = "new_username"
-    model_base.update_record(user)
-
-    # Eliminar un usuario
-    model_base.delete_record(user)
+        if user:
+            # Delete a player
+            model_base.delete_record(user)
