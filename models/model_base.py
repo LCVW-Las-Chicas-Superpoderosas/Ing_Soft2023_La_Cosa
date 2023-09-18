@@ -10,18 +10,15 @@ MYSQL_USER = 'root'
 class ModelBase:
     def __init__(self, database_url):
         self.database_url = database_url
-        try:
-            # Try to connect to the existing database
-            self.db = Database(
-                provider='mysql',
-                host=self.database_url,
-                user=MYSQL_USER,
-                passwd=MYSQL_USER,
-                db='ing_2023'
-            )
-        except Exception:
-            # If the database does not exist, create it
-            self.create_mysql_database()
+        # If the database does not exist, create it
+        self.create_mysql_database()
+        self.db = Database(   
+            provider='mysql',
+            host=self.database_url,
+            user=MYSQL_USER,
+            passwd=MYSQL_USER,
+            db='ing_2023'
+        )
 
     def initialize_database(self):
         class Card(self.db.Entity):
