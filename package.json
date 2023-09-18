@@ -1,0 +1,8 @@
+{
+  "name": "ing-soft-2023-La-Cosa",
+  "version": "0.0.1",
+  "scripts": {
+    "test": "pytest tests"
+  },
+  "author": "Las Chicas Super Poderosas"
+}
