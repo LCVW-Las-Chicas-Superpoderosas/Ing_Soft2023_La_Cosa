@@ -16,6 +16,5 @@
   
           uvicorn main:app --reload
 
-    Esto iniciará el servidor de desarrollo de FastAPI. La opción --reload permite que el servidor se reinicie automáticamente cuando hagas cambios en tu código.    
-    Ahora, si abres un navegador web o utiliza una herramienta como curl o Postman para hacer una solicitud GET a la url que te aparecera en consola.
-    Deberías recibir la respuesta "Hello, World!".
+* Correr el backend:
+    npm run start-server -- --host localhost --port 8000 --test true
