@@ -1,6 +1,6 @@
-from pony.orm import Database, commit, select, db_session
+from pony.orm import Database, select
 
-DATABASE_URL = "localhost"
+DATABASE_URL = 'localhost'
 MYSQL_USER = 'root'
 
 Models = Database(
@@ -23,10 +23,9 @@ class ModelBase:
     def add_record(self, entity_cls, **kwargs):
         try:
             entity = entity_cls(**kwargs)
-            commit()
             return entity
         except Exception as e:
-            raise Exception(f"Error adding record: {e}")
+            raise Exception(f'Error adding record: {e}')
 
     def get_record_by_value(self, entity_cls, **kwargs):
         try:
@@ -42,21 +41,14 @@ class ModelBase:
             return record
 
         except Exception as e:
-            print(f"Error retrieving record: {e}")
+            print(f'Error retrieving record: {e}')
             return None
-
-    def update_record(self, record):
-        try:
-            commit()
-        except Exception as e:
-            raise Exception(f"Error updating record: {e}")
 
     def delete_record(self, record):
         try:
             record.delete()
-            commit()
         except Exception as e:
-            raise Exception(f"Error deleting record: {e}")
+            raise Exception(f'Error deleting record: {e}')
 
 
 def initialize_database():
@@ -64,4 +56,4 @@ def initialize_database():
     try:
         Models.generate_mapping(create_tables=True)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f'Error: {e}')
