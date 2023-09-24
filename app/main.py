@@ -11,17 +11,16 @@ from pony.orm import db_session
 import uvicorn
 
 app = FastAPI()
-
 app.include_router(CardsRouter)
 
 
 @db_session
 def populate_db_test():
     model_base = ModelBase()
-    player = model_base.add_record(Player, name='el_pepe_test')
-    card = model_base.add_record(Card, name='el_pepe_card2', type=CardType.PANIC.value)
+    card = model_base.add_record(Card, name='lanzallamas', type=CardType.PANIC.value)
     chat = model_base.add_record(Chat)
-    model_base.add_record(Game, name='el_pepe_game2', password='', chats=chat, cards=card, players=player)
+    player = model_base.add_record(Player, name='test_con_los_pibes', cards=card)
+    model_base.add_record(Game, name='el_pepe_game4', password='', chats=chat, cards=card, players=player)
 
 
 if __name__ == '__main__':

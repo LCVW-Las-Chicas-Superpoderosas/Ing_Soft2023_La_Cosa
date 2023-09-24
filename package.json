@@ -4,7 +4,6 @@
   "scripts": {
     "test": "pytest ./app/tests",
     "start-server": "python ./app/create_mysql_db.py && python ./app/main.py"
-
   },
   "author": "Las Chicas Super Poderosas"
 }
