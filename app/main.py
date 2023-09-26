@@ -1,11 +1,8 @@
 import argparse
 
-from card.models import Card, CardType
 from card.view import router as CardsRouter
 from game.view import router as GameRouter
-from chat.models import Chat
 from fastapi import FastAPI
-from game.models import Game
 from model_base import initialize_database, ModelBase
 from player.models import Player
 from pony.orm import db_session
@@ -20,12 +17,10 @@ app.include_router(GameRouter)
 @db_session
 def populate_db_test():
     model_base = ModelBase()
-    player = model_base.add_record(Player, name='el_pepe_test')
-    card = model_base.add_record(Card, name='el_pepe_card2', type=CardType.PANIC.value)
-    chat = model_base.add_record(Chat)
-    model_base.add_record(
-        Game, name='el_pepe_game2', password='', chats=chat, cards=card, players=player
-    )
+    player1 = model_base.add_record(Player, name='juan')
+    player2 = model_base.add_record(Player, name='pedro')
+    player3 = model_base.add_record(Player, name='tomi')
+    player4 = model_base.add_record(Player, name='pepe')
 
 
 if __name__ == '__main__':
