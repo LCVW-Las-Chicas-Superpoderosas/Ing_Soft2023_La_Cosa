@@ -2,13 +2,14 @@ from pony.orm import Database, select
 
 DATABASE_URL = 'localhost'
 MYSQL_USER = 'root'
+MYSQL_PASSWORD = 'root'
 
 Models = Database(
     provider='mysql',
     host=DATABASE_URL,
     user=MYSQL_USER,
-    passwd=MYSQL_USER,
-    db='ing_2023'
+    passwd=MYSQL_PASSWORD,
+    db='ing_2023',
 )
 
 
@@ -17,12 +18,16 @@ class ModelBase:
         self.database_url = DATABASE_URL
 
     def get_all_entry_of_entity(self, entity_cls):
-        entries = select(c for c in entity_cls)[:]  # Use the select query to get all entities
+        entries = select(c for c in entity_cls)[
+            :
+        ]  # Use the select query to get all entities
         return [card.to_dict() for card in entries]
 
     def add_record(self, entity_cls, **kwargs):
         try:
             entity = entity_cls(**kwargs)
+            # add the entity to the database
+            Models.commit()
             return entity
         except Exception as e:
             raise Exception(f'Error adding record: {e}')
