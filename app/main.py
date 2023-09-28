@@ -2,6 +2,7 @@ import argparse
 
 from card.models import Card, CardType
 from card.view import router as CardsRouter
+from player.view import router as PlayerRouter
 from chat.models import Chat
 from fastapi import FastAPI
 from game.models import Game
@@ -13,6 +14,7 @@ import uvicorn
 app = FastAPI()
 
 app.include_router(CardsRouter)
+app.include_router(PlayerRouter)
 
 
 @db_session
