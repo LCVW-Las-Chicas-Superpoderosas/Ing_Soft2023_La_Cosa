@@ -43,3 +43,20 @@ class TestRegisterEndpoint(unittest.TestCase):
             if user:
                 user.delete()
                 commit()
+
+    def test_register_player_error(self):
+        # Define a test request body
+
+        # Send a POST request to the /register endpoint
+        response = CLIENT.post('/register', json=self.request_body)
+
+        # Send a POST request to the /register endpoint
+        response = CLIENT.post('/register', json=self.request_body)
+
+        # Check the response status code
+        self.assertEqual(response.status_code, 500)
+
+        # Check the response content
+        data = response.json()
+        self.assertIn('detail', data)
+        self.assertIn('IntegrityError', data['detail'])
