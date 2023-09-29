@@ -50,7 +50,7 @@ class TestCreateGameEndpoint(unittest.TestCase):
         self.assertEqual(
             response.json()['detail'],
             'Incorrect range of players.' +
-            'Please check the minimum and maximum player fields.',
+            ' Please check the minimum and maximum player fields.',
         )
 
     def test_create_game_min_players_less_than_4(self):
@@ -66,7 +66,7 @@ class TestCreateGameEndpoint(unittest.TestCase):
         self.assertEqual(
             response.json()['detail'],
             'Incorrect range of players.' +
-            'Please check the minimum and maximum player fields.',
+            ' Please check the minimum and maximum player fields.',
         )
 
     def test_create_game_max_players_greater_than_12(self):
@@ -82,7 +82,7 @@ class TestCreateGameEndpoint(unittest.TestCase):
         self.assertEqual(
             response.json()['detail'],
             'Incorrect range of players.' +
-            'Please check the minimum and maximum player fields.',
+            ' Please check the minimum and maximum player fields.',
         )
 
     def test_create_game_player_already_part_of_a_game(self):

@@ -19,39 +19,44 @@ class GameRequest(BaseModel):
     max_players: int
 
 
+def validate_game_creation_data(game_data: GameRequest):
+    if (game_data.min_players > game_data.max_players
+        or game_data.min_players < 4
+            or game_data.max_players > 12):
+        raise HTTPException(
+            status_code=400,
+            detail='Incorrect range of players.' +
+            ' Please check the minimum and maximum player fields.')
+
+
+def check_player_participation(id_player):
+    player = MODELBASE.get_record_by_value(Player, id=id_player)
+    existing_participant_game = select(g for g in Game if player in g.players)
+    if existing_participant_game:
+        raise HTTPException(
+            status_code=400,
+            detail='User is already part of a game.')
+
+
 @router.post('/game')
 def create_game(game_data: GameRequest):
-    try:
-        with db_session:
-            if (game_data.min_players > game_data.max_players
-                or game_data.min_players < 4
-                    or game_data.max_players > 12):
-                raise HTTPException(
-                    status_code=400,
-                    detail='Incorrect range of players.' +
-                    'Please check the minimum and maximum player fields.',
-                )
 
-            # Check if the player is already part of a game
-            player_host = MODELBASE.get_record_by_value(
+    validate_game_creation_data(game_data)
+
+    with db_session:
+
+        check_player_participation(game_data.id_player)
+
+        try:
+            player = MODELBASE.get_record_by_value(
                 Player, id=game_data.id_player)
-            existing_participant_game = select(
-                g for g in Game if player_host in g.players
-            )
-            if existing_participant_game:
-                raise HTTPException(
-                    status_code=400, detail='User is already part of a game.'
-                )
-
-            # Not adding cards to the game for now,
-            # it is set to nullable in the model
             chat = MODELBASE.add_record(Chat)
             game = MODELBASE.add_record(
                 Game,
                 name=game_data.name,
                 password=game_data.password,
                 chats=chat,
-                players=player_host,
+                players=player,
                 min_players=game_data.min_players,
                 max_players=game_data.max_players,
                 host=game_data.id_player,
@@ -65,7 +70,7 @@ def create_game(game_data: GameRequest):
                 },
             }
 
-    except HTTPException as http_exception:
-        raise http_exception  # Re-raise HTTPExceptions to return as response
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=str(e))
