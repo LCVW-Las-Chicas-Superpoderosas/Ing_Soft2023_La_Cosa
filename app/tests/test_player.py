@@ -1,10 +1,10 @@
+from create_mysql_db import create_database
 from fastapi.testclient import TestClient
-from main import app  # Replace 'main' with the name of your FastAPI app file
+from main import app
+from model_base import initialize_database
 from pony.orm import db_session, commit
 from player.models import Player
 import unittest
-from model_base import initialize_database
-from create_mysql_db import create_database
 
 CLIENT = TestClient(app)
 
