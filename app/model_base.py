@@ -1,6 +1,5 @@
-from pony.orm import Database, select, db_session
-from constants import DATABASE_URL, MYSQL_USER, MYSQL_PASS
-
+from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER
+from pony.orm import Database, db_session, select
 
 Models = Database(
     provider='mysql',
@@ -13,7 +12,8 @@ Models = Database(
 
 class ModelBase:
     def get_all_entry_of_entity(self, entity_cls):
-        entries = select(c for c in entity_cls)[:]  # Use the select query to get all entities
+        # Use the select query to get all entities
+        entries = select(c for c in entity_cls)[:]
         return [card.to_dict() for card in entries]
 
     def add_record(self, entity_cls, **kwargs):

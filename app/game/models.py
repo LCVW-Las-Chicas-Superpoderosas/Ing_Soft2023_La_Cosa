@@ -1,14 +1,17 @@
 from datetime import datetime
 
 from model_base import Models
-from pony.orm import PrimaryKey, Required, Set, Optional
+from pony.orm import Optional, PrimaryKey, Required, Set
 
 
 class Game(Models.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str, unique=True, index=True)
-    password = Optional(str, nullable=True)  # Define password as an optional (nullable) string field
+    password = Optional(str, nullable=True)
     created_at = Required(datetime, default=datetime.utcnow)
-    chats = Required("Chat")
-    cards = Set("Card")
-    players = Set("Player")
+    host = Required(int)  # Player_id of the host
+    chats = Required('Chat')
+    cards = Set('Card', nullable=True)
+    players = Set('Player')
+    min_players = Required(int)
+    max_players = Required(int)
