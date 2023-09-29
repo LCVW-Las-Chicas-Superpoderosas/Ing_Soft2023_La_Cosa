@@ -12,3 +12,4 @@ class Player(Models.Entity):
     game = Optional(Game)
     cards = Set('Card')
     is_alive = Required(bool, default=True)
+

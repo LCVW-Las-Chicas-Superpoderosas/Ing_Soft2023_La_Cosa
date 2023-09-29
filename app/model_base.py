@@ -1,28 +1,25 @@
-from pony.orm import Database, select
+from pony.orm import Database, select, db_session
+from constants import DATABASE_URL, MYSQL_USER, MYSQL_PASS
 
-DATABASE_URL = 'localhost'
-MYSQL_USER = 'root'
 
 Models = Database(
     provider='mysql',
     host=DATABASE_URL,
     user=MYSQL_USER,
-    passwd=MYSQL_USER,
+    passwd=MYSQL_PASS,
     db='ing_2023'
 )
 
 
 class ModelBase:
-    def __init__(self):
-        self.database_url = DATABASE_URL
-
     def get_all_entry_of_entity(self, entity_cls):
         entries = select(c for c in entity_cls)[:]  # Use the select query to get all entities
         return [card.to_dict() for card in entries]
 
     def add_record(self, entity_cls, **kwargs):
         try:
-            entity = entity_cls(**kwargs)
+            with db_session:
+                entity = entity_cls(**kwargs)
             return entity
         except Exception as e:
             raise Exception(f'Error adding record: {e}')
