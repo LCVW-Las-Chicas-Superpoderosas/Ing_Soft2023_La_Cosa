@@ -2,7 +2,9 @@ import unittest
 
 from fastapi.testclient import TestClient
 from main import app
-from model_base import initialize_database
+from model_base import ModelBase, initialize_database
+from player.models import Player
+from pony.orm import db_session
 
 
 class TestCreateGameEndpoint(unittest.TestCase):
@@ -20,6 +22,12 @@ class TestCreateGameEndpoint(unittest.TestCase):
     '''
 
     def test_create_game(self):
+
+        model_base = ModelBase()
+
+        with db_session:
+            model_base.add_record(Player, name='juan')
+
         game_data = {
             'id_player': 1,
             'name': 'catacumbas_ok',
@@ -38,6 +46,12 @@ class TestCreateGameEndpoint(unittest.TestCase):
         self.assertTrue(response.json()['data']['game_id'] > 0)
 
     def test_create_game_min_players_greater_than_max_players(self):
+
+        model_base = ModelBase()
+
+        with db_session:
+            model_base.add_record(Player, name='pedro')
+
         game_data = {
             'id_player': 2,
             'name': 'catacumbas_min_gt_max',
@@ -54,6 +68,12 @@ class TestCreateGameEndpoint(unittest.TestCase):
         )
 
     def test_create_game_min_players_less_than_4(self):
+
+        model_base = ModelBase()
+
+        with db_session:
+            model_base.add_record(Player, name='tomi')
+
         game_data = {
             'id_player': 3,
             'name': 'catacumbas_min_gt_4',
@@ -70,6 +90,12 @@ class TestCreateGameEndpoint(unittest.TestCase):
         )
 
     def test_create_game_max_players_greater_than_12(self):
+
+        model_base = ModelBase()
+
+        with db_session:
+            model_base.add_record(Player, name='pepe')
+
         game_data = {
             'id_player': 4,
             'name': 'catacumbas_max_gt_12',
@@ -86,6 +112,7 @@ class TestCreateGameEndpoint(unittest.TestCase):
         )
 
     def test_create_game_player_already_part_of_a_game(self):
+
         game_data = {
             'id_player': 1,
             'name': 'catacumbas_player_already_part_of_a_game',
