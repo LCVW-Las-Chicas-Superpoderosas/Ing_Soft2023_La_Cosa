@@ -75,6 +75,7 @@ def play_card(request_body: PlayCardRequest):
     target_id = request_body.target_id
 
     with db_session:
+        
         card = MODEL_BASE.get_record_by_value(Card, card_token=card_token)
 
         # Check if the card exists
