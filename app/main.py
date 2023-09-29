@@ -2,25 +2,27 @@ import argparse
 
 import uvicorn
 from card.view import router as CardsRouter
+from chat.models import Chat
 from fastapi import FastAPI
 from game.view import router as GameRouter
 from model_base import ModelBase, initialize_database
 from player.models import Player
+from player.view import router as PlayerRouter
 from pony.orm import db_session
 
 app = FastAPI()
-
 app.include_router(CardsRouter)
 app.include_router(GameRouter)
+app.include_router(PlayerRouter)
 
 
 @db_session
 def populate_db_test():
     model_base = ModelBase()
-    model_base.add_record(Player, name='juan')
-    model_base.add_record(Player, name='pedro')
-    model_base.add_record(Player, name='tomi')
-    model_base.add_record(Player, name='pepe')
+    card = model_base.add_record(Card, name='lanzallamas', type=CardType.PANIC.value)
+    chat = model_base.add_record(Chat)
+    player = model_base.add_record(Player, name='test_con_los_pibes', cards=card)
+    model_base.add_record(Game, name='el_pepe_game4', password='', chats=chat, cards=card, players=player)
 
 
 if __name__ == '__main__':

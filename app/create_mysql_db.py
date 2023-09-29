@@ -2,6 +2,7 @@ import mysql.connector
 from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER
 
 
+
 def create_database(database):
     try:
         # Connect to MySQL server (assumes root user with no password)
