@@ -1,5 +1,5 @@
 import mysql.connector
-from constants import DATABASE_URL, MYSQL_USER, MYSQL_PASS
+from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER
 
 
 def create_database(database):

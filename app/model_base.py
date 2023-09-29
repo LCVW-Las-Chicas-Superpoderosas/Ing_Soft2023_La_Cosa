@@ -1,6 +1,5 @@
-from pony.orm import Database, select, db_session
-from constants import DATABASE_URL, MYSQL_USER, MYSQL_PASS
-
+from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER
+from pony.orm import Database, db_session, select
 
 Models = Database(
     provider='mysql',
