@@ -14,7 +14,8 @@ class GameRequest(BaseModel):
     # Modeling the request body
     id_player: int
     name: str
-    password: str = ''
+    # password is optional and Null by default
+    password: str = None
     min_players: int
     max_players: int
 
@@ -44,9 +45,9 @@ def create_game(game_data: GameRequest):
     validate_game_creation_data(game_data)
 
     with db_session:
-
         check_player_participation(game_data.id_player)
 
+    with db_session:
         try:
             player = MODELBASE.get_record_by_value(
                 Player, id=game_data.id_player)
@@ -62,15 +63,14 @@ def create_game(game_data: GameRequest):
                 host=game_data.id_player,
             )
 
-            return {
-                'status_code': 200,
-                'detail': f'Game {game.name} created successfully.',
-                'data': {
-                    'game_id': game.id,
-                },
-            }
-
         except Exception as e:
             raise HTTPException(
                 status_code=400,
                 detail=str(e))
+    return {
+        'status_code': 200,
+        'detail': f'Game {game.name} created successfully.',
+        'data': {
+            'game_id': game.id,
+        }
+    }
