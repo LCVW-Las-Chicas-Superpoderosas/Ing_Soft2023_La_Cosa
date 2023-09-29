@@ -1,12 +1,12 @@
 import argparse
 
+import uvicorn
 from card.view import router as CardsRouter
-from game.view import router as GameRouter
 from fastapi import FastAPI
-from model_base import initialize_database, ModelBase
+from game.view import router as GameRouter
+from model_base import ModelBase, initialize_database
 from player.models import Player
 from pony.orm import db_session
-import uvicorn
 
 app = FastAPI()
 
@@ -17,15 +17,16 @@ app.include_router(GameRouter)
 @db_session
 def populate_db_test():
     model_base = ModelBase()
-    player1 = model_base.add_record(Player, name='juan')
-    player2 = model_base.add_record(Player, name='pedro')
-    player3 = model_base.add_record(Player, name='tomi')
-    player4 = model_base.add_record(Player, name='pepe')
+    model_base.add_record(Player, name='juan')
+    model_base.add_record(Player, name='pedro')
+    model_base.add_record(Player, name='tomi')
+    model_base.add_record(Player, name='pepe')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Run the FastAPI application with optional host and port parameters.'
+        description='Run the FastAPI application' +
+        'with optional host and port parameters.'
     )
     parser.add_argument(
         '--host',
