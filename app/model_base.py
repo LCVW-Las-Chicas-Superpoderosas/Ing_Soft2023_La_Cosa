@@ -1,5 +1,6 @@
-from pony.orm import Database, select, commit
+from pony.orm import Database, select, db_session
 from constants import DATABASE_URL, MYSQL_USER, MYSQL_PASS
+
 
 Models = Database(
     provider='mysql',
@@ -17,8 +18,8 @@ class ModelBase:
 
     def add_record(self, entity_cls, **kwargs):
         try:
-            entity = entity_cls(**kwargs)
-            commit()
+            with db_session:
+                entity = entity_cls(**kwargs)
             return entity
         except Exception as e:
             raise Exception(f'Error adding record: {e}')
