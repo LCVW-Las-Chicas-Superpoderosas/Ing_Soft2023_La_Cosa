@@ -9,4 +9,4 @@ class Player(Models.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str, unique=True, index=True)
     created_at = Required(datetime, default=datetime.utcnow)
-    game = Optional(Game)  # Define the reverse attribute as "cards"
+    game = Optional(Game)  # Define the reverse attribute
