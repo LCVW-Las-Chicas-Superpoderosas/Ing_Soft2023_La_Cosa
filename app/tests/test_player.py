@@ -3,15 +3,21 @@ from main import app  # Replace 'main' with the name of your FastAPI app file
 from pony.orm import db_session, commit
 from player.models import Player
 import unittest
-
+from model_base import initialize_database
+from create_mysql_db import create_database
 
 CLIENT = TestClient(app)
 
 
 class TestRegisterEndpoint(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        # Create and initialize the database
+        create_database('ing_2023')
+        initialize_database()
 
+    def setUp(self):
         self.request_body = {'name': 'test_player_1'}
 
     def test_register_player(self):
