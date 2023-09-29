@@ -32,7 +32,7 @@ if __name__ == '__main__':
         '--host',
         type=str,
         default='localhost',
-        help='Host address to bind the server to.',
+        help='Host address to bind the server to.'
     )
     parser.add_argument(
         '--port', type=int, default=8000, help='Port number to listen on.'
@@ -41,7 +41,7 @@ if __name__ == '__main__':
         '--test',
         type=bool,
         default=False,
-        help='If True, then populate the database with some initial test data.',
+        help='If True, then populate the database with some initial test data.'
     )
 
     args = parser.parse_args()
