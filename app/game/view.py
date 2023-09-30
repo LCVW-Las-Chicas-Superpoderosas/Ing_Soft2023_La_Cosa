@@ -31,13 +31,11 @@ def validate_game_creation_data(game_data: GameRequest):
 
 def check_player_participation(id_player):
     player = MODELBASE.get_first_record_by_value(Player, id=id_player)
-    games = Game.select().first()
-    if games is not None:
-        existing_participant_game = Game.select(id=player.game.id)
-        if existing_participant_game:
-            raise HTTPException(
-                status_code=400,
-                detail='User is already part of a game.')
+    existing_participant_game = player.game
+    if existing_participant_game is not None:
+        raise HTTPException(
+            status_code=400,
+            detail='User is already part of a game.')
 
 
 @router.post('/game')
