@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from game.models import Game
 from model_base import ModelBase
 from player.models import Player
-from pony.orm import db_session, select
+from pony.orm import db_session
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -21,22 +21,23 @@ class GameRequest(BaseModel):
 
 
 def validate_game_creation_data(game_data: GameRequest):
-    if (game_data.min_players > game_data.max_players
-        or game_data.min_players < 4
-            or game_data.max_players > 12):
+    if (game_data.min_players > game_data.max_players or
+    game_data.min_players < 4 or game_data.max_players > 12):
         raise HTTPException(
             status_code=400,
-            detail='Incorrect range of players.' +
-            ' Please check the minimum and maximum player fields.')
+            detail='Incorrect range of players. ' +
+            'Please check the minimum and maximum player fields.')
 
 
 def check_player_participation(id_player):
-    player = MODELBASE.get_record_by_value(Player, id=id_player)
-    existing_participant_game = select(g for g in Game if player in g.players)
-    if existing_participant_game:
-        raise HTTPException(
-            status_code=400,
-            detail='User is already part of a game.')
+    player = MODELBASE.get_first_record_by_value(Player, id=id_player)
+    games = Game.select().first()
+    if games is not None:
+        existing_participant_game = Game.select(id=player.game.id)
+        if existing_participant_game:
+            raise HTTPException(
+                status_code=400,
+                detail='User is already part of a game.')
 
 
 @router.post('/game')
@@ -49,7 +50,7 @@ def create_game(game_data: GameRequest):
 
     with db_session:
         try:
-            player = MODELBASE.get_record_by_value(
+            player = MODELBASE.get_first_record_by_value(
                 Player, id=game_data.id_player)
             chat = MODELBASE.add_record(Chat)
             game = MODELBASE.add_record(

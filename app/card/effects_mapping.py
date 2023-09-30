@@ -8,7 +8,7 @@ MODEL_BASE = ModelBase()
 def flame_torch(target_id):
     try:
         with db_session:
-            target_user = MODEL_BASE.get_record_by_value(Player, id=target_id)
+            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
             target_user.is_alive = False
             target_user.flush()
             return True
