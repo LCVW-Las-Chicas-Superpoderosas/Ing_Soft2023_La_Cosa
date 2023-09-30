@@ -30,7 +30,7 @@ def _targeted_effect(target_user, card, user):
         raise HTTPException(status_code=400, detail='Users are not in the same game')
 
     # Get the game that contains the players
-    game = MODEL_BASE.get_record_by_value(Game, id=user.game.id)
+    game = MODEL_BASE.get_first_record_by_value(Game, id=user.game.id)
 
     # Check if the game contains these players
     if game is None:
@@ -75,12 +75,13 @@ def play_card(request_body: PlayCardRequest):
     target_id = request_body.target_id
 
     with db_session:
-        card = MODEL_BASE.get_record_by_value(Card, card_token=card_token)
+
+        card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
 
         # Check if the card exists
         if card is None:
             raise HTTPException(status_code=400, detail=f'Card token: {card_token} not found')
-        user = MODEL_BASE.get_record_by_value(Player, id=id_usuario)
+        user = MODEL_BASE.get_first_record_by_value(Player, id=id_usuario)
 
         # Check if the user exists
         if user is None:
@@ -88,7 +89,7 @@ def play_card(request_body: PlayCardRequest):
         if not user.is_alive:
             raise HTTPException(status_code=400, detail=f'User {user.name} is dead')
         if target_id is not None:
-            target_user = MODEL_BASE.get_record_by_value(
+            target_user = MODEL_BASE.get_first_record_by_value(
                 Player, id=target_id)
             if target_user is None:
                 raise HTTPException(status_code=400, detail='Target user not found')

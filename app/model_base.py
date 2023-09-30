@@ -24,18 +24,32 @@ class ModelBase:
         except Exception as e:
             raise Exception(f'Error adding record: {e}')
 
-    def get_record_by_value(self, entity_cls, **kwargs):
+    def get_first_record_by_value(self, entity_cls, **kwargs):
         try:
             # Initialize the query with the entity class
-            query = select(c for c in entity_cls)
+            query = entity_cls.select()
 
             # Add conditions based on the key-value pairs in kwargs
-            for key, value in kwargs.items():
-                query = query.filter(lambda c: getattr(c, key) == value)
+            query = query.filter(**kwargs)
 
             # Retrieve the first matching record or None
             record = query.first()
             return record
+
+        except Exception as e:
+            print(f'Error retrieving record: {e}')
+            return None
+
+    def get_records_by_value(self, entity_cls, **kwargs):
+        try:
+            # Initialize the query with the entity class
+            query = entity_cls.select()
+
+            # Add conditions based on the key-value pairs in kwargs
+            query = query.filter(**kwargs)
+
+            # Retrieve the first matching record or None
+            return query
 
         except Exception as e:
             print(f'Error retrieving record: {e}')

@@ -22,7 +22,7 @@ class TestModelBase(unittest.TestCase):
         with db_session:
             player = self.model_base.add_record(Player, name='el_pepe')
             self.model_base.delete_record(player)
-            deleted_player = self.model_base.get_record_by_value(Player, name='el_pepe')
+            deleted_player = self.model_base.get_first_record_by_value(Player, name='el_pepe')
             self.assertIsNone(deleted_player)
 
     def test_add_record(self):
