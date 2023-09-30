@@ -27,10 +27,11 @@ class ModelBase:
     def get_record_by_value(self, entity_cls, **kwargs):
         try:
             # Initialize the query with the entity class
-            query = entity_cls.select()
+            query = select(c for c in entity_cls)
 
             # Add conditions based on the key-value pairs in kwargs
-            query = query.filter(**kwargs)
+            for key, value in kwargs.items():
+                query = query.filter(lambda c: getattr(c, key) == value)
 
             # Retrieve the first matching record or None
             record = query.first()
