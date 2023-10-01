@@ -26,8 +26,8 @@ def _validate_game_creation_data(game_data: GameRequest):
             or game_data.max_players > 12):
         raise HTTPException(
             status_code=400,
-            detail='Incorrect range of players.' +
-            ' Please check the minimum and maximum player fields.')
+            detail='Incorrect range of players. ' +
+            'Please check the minimum and maximum player fields.')
 
 
 def _check_player_participation(player):

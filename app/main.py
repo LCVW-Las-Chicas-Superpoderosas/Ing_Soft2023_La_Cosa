@@ -11,11 +11,20 @@ from model_base import ModelBase, initialize_database
 from player.models import Player
 from player.view import router as PlayerRouter
 from pony.orm import db_session
+from fastapi.middleware.cors import CORSMiddleware;
+
 
 app = FastAPI()
 app.include_router(CardsRouter)
 app.include_router(GameRouter)
 app.include_router(PlayerRouter)
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Add the origins you want to allow
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Add the HTTP methods you want to allow
+    allow_headers=["*"],  # You can specify specific headers here or use "*" to allow any
+)
 
 
 @db_session
