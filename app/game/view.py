@@ -20,10 +20,14 @@ class GameRequest(BaseModel):
     max_players: int
 
 
+class NextTurnRequest(BaseModel):
+    # Modeling the request body
+    game_id: int
+
+
 def _validate_game_creation_data(game_data: GameRequest):
-    if (game_data.min_players > game_data.max_players
-        or game_data.min_players < 4
-            or game_data.max_players > 12):
+    if (game_data.min_players > game_data.max_players or
+    game_data.min_players < 4 or game_data.max_players > 12):
         raise HTTPException(
             status_code=400,
             detail='Incorrect range of players. ' +
@@ -45,6 +49,28 @@ def _player_exists(player_id):
             detail=f'User with id {player_id} not found.')
 
     return player
+
+
+@router.post('/game/next_turn')
+def next_turn(game_data: NextTurnRequest):
+    with db_session:
+        game = MODELBASE.get_first_record_by_value(Game, id=game_data.game_id)
+
+        if game is None:
+            raise HTTPException(status_code=400, detail='Game not found.')
+
+        try:
+            game.next_turn()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return {
+        'status_code': 200,
+        'detail': f'Next turn for game {game.name} set successfully.',
+        'data': {
+            'game_data': game.to_dict(),
+        }
+    }
 
 
 @router.post('/game')
@@ -73,6 +99,8 @@ def create_game(game_data: GameRequest):
             min_players=min_players,
             max_players=max_players,
             host=player_id)
+
+        game.set_turns()
 
         return {
             'status_code': 200,
@@ -115,7 +143,7 @@ def join_game(join_game_data: JoinGameRequest):
         # Check if the player is already part of a game
         _check_player_participation(player)
 
-        game = MODELBASE.get_record_by_value(Game, id=game_id)
+        game = MODELBASE.get_first_record_by_value(Game, id=game_id)
 
         # Check if the game exists
         if game is None:
@@ -127,7 +155,7 @@ def join_game(join_game_data: JoinGameRequest):
         _is_game_joinable(game)
 
         # Add the player to the game
-        player = MODELBASE.get_record_by_value(Player, id=player_id)
+        player = MODELBASE.get_first_record_by_value(Player, id=player_id)
         game.players.add(player)
 
         # Return players and game host id

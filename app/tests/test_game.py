@@ -6,6 +6,7 @@ from main import app
 from model_base import ModelBase, initialize_database
 from player.models import Player
 from pony.orm import db_session, commit
+from tests.test_utils import create_data_test, delete_data_test
 
 
 client = TestClient(app)
@@ -37,7 +38,6 @@ class TestCreateGameEndpoint(unittest.TestCase):
     '''
 
     def test_create_game(self):
-
         with db_session:
             model_base = ModelBase()
             player = model_base.add_record(Player, name='test_player')
@@ -74,7 +74,6 @@ class TestCreateGameEndpoint(unittest.TestCase):
         )
 
     def test_create_game_min_players_greater_than_max_players(self):
-
         with db_session:
             model_base = ModelBase()
             player = model_base.add_record(Player, name='pedro')
@@ -96,7 +95,6 @@ class TestCreateGameEndpoint(unittest.TestCase):
         )
 
     def test_create_game_min_players_less_than_4(self):
-
         with db_session:
             model_base = ModelBase()
             player = model_base.add_record(Player, name='tomi')
@@ -118,7 +116,6 @@ class TestCreateGameEndpoint(unittest.TestCase):
         )
 
     def test_create_game_max_players_greater_than_12(self):
-
         with db_session:
             model_base = ModelBase()
             player = model_base.add_record(Player, name='pepe')
@@ -138,3 +135,37 @@ class TestCreateGameEndpoint(unittest.TestCase):
             'Incorrect range of players.' +
             ' Please check the minimum and maximum player fields.',
         )
+
+
+class TestGameActions(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_next_turn_ok(self):
+        # Test the next_turn endpoint
+
+        with db_session:
+            card, chat, player, game = create_data_test()
+
+            game_data = {
+                'game_id': game.id,
+            }
+
+            response = client.post('/game/next_turn', json=game_data)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                f'Next turn for game {game.name} set successfully.')
+            delete_data_test(card, chat, player, game)
+
+    def test_next_turn_invalid_game(self):
+        # Test the next_turn endpoint
+        game_data = {
+            'game_id': 99999,
+        }
+        response = client.post('/game/next_turn', json=game_data)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['detail'], 'Game not found.')

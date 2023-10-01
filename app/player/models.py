@@ -13,3 +13,7 @@ class Player(Models.Entity):
     cards = Set('Card')
     is_alive = Required(bool, default=True)
 
+    def is_in_game(self, game_id):
+        if self.game is None:
+            return False
+        return game_id == self.game.id
