@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from enum import IntEnum
 from model_base import Models
-from pony.orm import PrimaryKey, Required, Set
+from pony.orm import Optional, PrimaryKey, Required, Set
 
 
 class CardType(IntEnum):
@@ -20,3 +20,4 @@ class Card(Models.Entity):
     type = Required(CardType)
     game = Set('Game')  # Define the reverse attribute as "cards"
     player = Set('Player')  # Define the reverse attribute as "cards"
+    number = Optional(int)  # Number 0 is only for IT card, Null is for not playable cards

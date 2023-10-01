@@ -49,15 +49,16 @@ def populate_db_test():
 def get_cards_from_text(text):
     result = []
     lines = text.split('\n')  # Split the text into lines
-    pattern = r'(\d+)- (\s*[^\d:]+) [:\d]* - (\d)'
+    pattern = r'(\d+)- (\s*[^\d:]+) (\d*) - (\d)'
 
     for line in lines:
         match = re.match(pattern, line)
         if match:
-            card_number = match.group(1)
+            card_id = match.group(1)
             card_name = match.group(2)
-            card_type = match.group(3)
-            result.append((card_number, card_name, card_type))
+            card_number = match.group(3)
+            card_type = match.group(4)
+            result.append((card_id, card_name, card_type, card_number))
     return result
 
 
@@ -71,12 +72,12 @@ def load_cards():
 
     for card in cards:
         model_base.add_record(Card, name=card[1],
-            card_token=f'img{card[0]}.jpg', type=card[2])
+            card_token=f'img{card[0]}.jpg', type=card[2], number=card[3])
         commit()
-    model_base.add_record(Card, name='Reverse', card_token='reverse.jpg',
-        type=CardType.OTHER.value)
-    model_base.add_record(Card, name='Panic Reverse', card_token='panic-reverse.jpg',
-        type=CardType.OTHER.value)
+    model_base.add_record(Card, name='Reverse', number=None,
+        card_token='reverse.jpg', type=CardType.OTHER.value)
+    model_base.add_record(Card, name='Panic Reverse', number=None,
+        card_token='panic-reverse.jpg', type=CardType.OTHER.value)
     print('Cards loaded successfully')
 
 
