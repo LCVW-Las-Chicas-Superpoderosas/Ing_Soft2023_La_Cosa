@@ -141,3 +141,47 @@ def join_game(join_game_data: JoinGameRequest):
                 'host': host
             }
         }
+
+
+class LobbyInfoRequest(BaseModel):
+    id_player: int
+
+
+def _is_game_startable(game: Game):
+    # Check game status and number of players
+    # return true if game can be started
+    return (game.status == GameStatus.WAITING
+            and len(game.players) >= game.min_players)
+
+
+@router.get('/game/join')
+def lobby_info(request: LobbyInfoRequest):
+    player_id = request.id_player
+
+    with db_session:
+        # Check if the player exists
+        player = _player_exists(player_id)
+
+        # Get the game
+        game = player.game
+
+        # If player is not part of a game, return error
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Player is not part of a game.')
+
+        # Check if game can be started
+        can_start = _is_game_startable(game)
+
+        players = [p.to_dict() for p in game.players]
+        is_host = game.host == player_id
+        return {
+            'status_code': 200,
+            'detail': f'{game.name} lobby information.',
+            'data': {
+                'players': players,
+                'is_host': is_host,
+                'can_start': can_start
+            }
+        }
