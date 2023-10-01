@@ -1,0 +1,108 @@
+1- La Cosa 0 - 3
+2- Infectado 4 - 2
+3- Infectado 4 - 2 
+4- Infectado 4 - 2
+5- Infectado 4 - 2
+6- Infectado 4 - 2
+7- Infectado 4 - 2
+8- Infectado 4 - 2
+9- Infectado 4 - 2
+10- Infectado 6 - 2
+11- Infectado 6 - 2
+12- Infectado 7 - 2
+13- Infectado 7 - 2
+14- Infectado 8 - 2
+15- Infectado 9 - 2
+16- Infectado 9 - 2
+17- Infectado 10 - 2
+18- Infectado 10 - 2
+19- Infectado 11 - 2
+20- Infectado 11 - 2
+21- Infectado 11 - 2
+22- Lanzallamas 4 - 1
+23- Lanzallamas 4 - 1
+24- Lanzallamas 6 - 1
+25- Lanzallamas 9 - 1
+26- Lanzallamas 11 - 1
+27- Analisis 5 - 1
+28- Analisis 6 - 1
+29- Analisis 9 - 1
+30- Hacha 4 - 1
+31- Hacha 9 - 1
+32- Sospecha 4 - 1
+33- Sospecha 4 - 1
+34- Sospecha 4 - 1
+35- Sospecha 4 - 1
+36- Sospecha 7 - 1
+37- Sospecha 8 - 1
+38- Sospecha 9 - 1
+39- Sospecha 10 - 1
+40- Whisky 4 - 1
+41- Whisky 6 - 1
+42- Whisky 10 - 1
+43- Determinacion 4 - 1
+44- Determinacion 4 - 1
+45- Determinacion 6 - 1
+46- Determinacion 9 - 1
+47- Determinacion 10 - 1
+48- Vigila tus espaldas 4 - 1
+49- Vigila tus espaldas 9 - 1
+50- Cambio de lugar! 4 - 1
+51- Cambio de lugar! 4 - 1
+52- Cambio de lugar! 7 - 1
+53- Cambio de lugar! 9 - 1
+54- Cambio de lugar! 11 - 1
+55- Mas vale que corras! 4 - 1
+56- Mas vale que corras! 4 - 1
+57- Mas vale que corras! 7 - 1
+58- Mas vale que corras! 9 - 1
+59- Mas vale que corras! 11 - 1
+60- Seduccion 4 - 1
+61- Seduccion 4 - 1
+62- Seduccion 6 - 1
+63- Seduccion 7 - 1
+64- Seduccion 8 - 1
+65- Seduccion 10 - 1
+66- Seduccion 11 - 1
+67- Aterrador 5 - 1
+68- Aterrador 6 - 1
+69- Aterrador 8 - 1
+70- Aterrador 11 - 1
+71- Aqui estoy bien 4 - 1
+72- Aqui estoy bien 6 - 1
+73- Aqui estoy bien 11 - 1
+74- No, Gracias! 4 - 1
+75- No, Gracias! 6 - 1
+76- No, Gracias! 8 - 1
+77- No, Gracias! 11 - 1
+78- Fallaste! 4 - 1
+79- Fallaste! 6 - 1
+80- Fallaste! 11 - 1
+81- Nada de barbacoas! 4 - 1
+82- Nada de barbacoas! 6 - 1
+83- Nada de barbacoas! 11 - 1
+84- Cuarentena 5 - 1
+85- Cuarentena 9 - 1
+86- Cuarentena 4 - 1
+87- Puerta atrancada 7 - 0
+88- Puerta atrancada 11 - 0
+89- Cuerdas podridas 6 - 0
+90- Cuerdas podridas 9 - 0
+91- Uno, dos... 5 - 0
+92- Uno, dos... 9 - 0
+93- Tres, cuatro... 4 - 0
+94- Tres, cuatro... 9 - 0
+95- Es aqui la fiesta? 5 - 0
+96- Es aqui la fiesta? 9 - 0
+97- Sal de aqui! 5 - 0
+98- Olvidadizo 4 - 0
+99- Vuelta y vuelta 4 - 0
+100- Vuelta y vuelta 9 - 0
+101- No podemos ser amigos? 7 - 0
+102- No podemos ser amigos? 9 - 0
+103- Cita a ciegas 4 - 0
+104- Cita a ciegas 9 - 0
+105- Ups! 10 - 0
+106- Que quede entre nosotros... 7 - 0
+107- Que quede entre nostros... 9 - 0
+108- Revelaciones 8 - 0
