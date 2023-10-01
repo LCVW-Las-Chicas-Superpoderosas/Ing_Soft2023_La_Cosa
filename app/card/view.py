@@ -62,8 +62,8 @@ def _targeted_effect(target_user, card, user):
         'status_code': 200,
         'detail': f'Card {card.name} played successfully',
         'data': {
-            user.name: user_data,
-            target_user.name: target_data
+            "user": user_data,
+            "target_user": target_data
         }
     }
 
@@ -81,6 +81,7 @@ def play_card(request_body: PlayCardRequest):
         # Check if the card exists
         if card is None:
             raise HTTPException(status_code=400, detail=f'Card token: {card_token} not found')
+
         user = MODEL_BASE.get_first_record_by_value(Player, id=id_usuario)
 
         # Check if the user exists
