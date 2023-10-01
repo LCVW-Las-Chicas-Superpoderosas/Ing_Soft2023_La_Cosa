@@ -20,6 +20,11 @@ class GameRequest(BaseModel):
     max_players: int
 
 
+class NextTurnRequest(BaseModel):
+    # Modeling the request body
+    game_id: int
+
+
 def validate_game_creation_data(game_data: GameRequest):
     if (game_data.min_players > game_data.max_players or
     game_data.min_players < 4 or game_data.max_players > 12):
@@ -36,6 +41,28 @@ def check_player_participation(id_player):
         raise HTTPException(
             status_code=400,
             detail='User is already part of a game.')
+
+
+@router.post('/game/next_turn')
+def next_turn(game_data: NextTurnRequest):
+    with db_session:
+        game = MODELBASE.get_first_record_by_value(Game, id=game_data.game_id)
+
+        if game is None:
+            raise HTTPException(status_code=400, detail='Game not found.')
+
+        try:
+            game.next_turn()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return {
+        'status_code': 200,
+        'detail': f'Next turn for game {game.name} set successfully.',
+        'data': {
+            'game_data': game.to_dict(),
+        }
+    }
 
 
 @router.post('/game')
@@ -61,6 +88,7 @@ def create_game(game_data: GameRequest):
                 max_players=game_data.max_players,
                 host=game_data.id_player,
             )
+            game.set_turns()
 
         except Exception as e:
             raise HTTPException(
