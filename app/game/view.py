@@ -38,7 +38,7 @@ def _check_player_participation(player):
 
 
 def _player_exists(player_id):
-    player = MODELBASE.get_record_by_value(Player, id=player_id)
+    player = MODELBASE.get_first_record_by_value(Player, id=player_id)
     if player is None:
         raise HTTPException(
             status_code=400,
