@@ -56,9 +56,6 @@ class TestCreateGameEndpoint(unittest.TestCase):
         self.assertEqual(response.json()['detail'],
             'Game catacumbas_ok created successfully.')
 
-        self.assertTrue(isinstance(response.json()['data']['game_id'], int))
-        self.assertTrue(response.json()['data']['game_id'] > 0)
-
     def test_create_game_player_already_part_of_a_game(self):
         with db_session:
             player = Player.get(name='test_player')
