@@ -27,7 +27,7 @@ class NextTurnRequest(BaseModel):
 
 def _validate_game_creation_data(game_data: GameRequest):
     if (game_data.min_players > game_data.max_players or
-    game_data.min_players < 4 or game_data.max_players > 12):
+            game_data.min_players < 4 or game_data.max_players > 12):
         raise HTTPException(
             status_code=400,
             detail='Incorrect range of players. ' +
@@ -118,7 +118,7 @@ class JoinGameRequest(BaseModel):
 
 def _is_game_joinable(game: Game):
     # Check game status
-    if game.status != GameStatus.WAITING:
+    if game.status != GameStatus.WAITING.value:
         raise HTTPException(
             status_code=400,
             detail='Game is not waiting for players.')
@@ -174,7 +174,7 @@ def join_game(join_game_data: JoinGameRequest):
 def _is_game_startable(game: Game):
     # Check game status and number of players
     # return true if game can be started
-    return (game.status == GameStatus.WAITING
+    return (game.status == GameStatus.WAITING.value
             and len(game.players) >= game.min_players)
 
 
