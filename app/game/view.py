@@ -1,5 +1,5 @@
 from chat.models import Chat
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from game.models import Game, GameStatus
 from model_base import ModelBase
 from player.models import Player
@@ -171,10 +171,6 @@ def join_game(join_game_data: JoinGameRequest):
         }
 
 
-class LobbyInfoRequest(BaseModel):
-    id_player: int
-
-
 def _is_game_startable(game: Game):
     # Check game status and number of players
     # return true if game can be started
@@ -183,12 +179,11 @@ def _is_game_startable(game: Game):
 
 
 @router.get('/game/join')
-def lobby_info(request: LobbyInfoRequest):
-    player_id = request.id_player
+def lobby_info(id_player: int = Header(..., key='id-player')):
 
     with db_session:
         # Check if the player exists
-        player = _player_exists(player_id)
+        player = _player_exists(id_player)
 
         # Get the game
         game = player.game
@@ -203,7 +198,7 @@ def lobby_info(request: LobbyInfoRequest):
         can_start = _is_game_startable(game)
 
         players = [p.to_dict() for p in game.players]
-        is_host = game.host == player_id
+        is_host = game.host == id_player
         return {
             'status_code': 200,
             'detail': f'{game.name} lobby information.',
