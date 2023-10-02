@@ -5,11 +5,13 @@ from game.models import Game
 from main import app
 from model_base import ModelBase, initialize_database
 from player.models import Player
-from pony.orm import db_session, commit
-from tests.test_utils import (create_data_test, delete_data_test,
-                              create_data_full_lobby, create_data_started_game,
-                              delete_data_full_lobby)
-
+from pony.orm import commit, db_session
+from tests.test_utils import (create_data_full_lobby,
+                              create_data_full_lobby_ep,
+                              create_data_incomplete_lobby,
+                              create_data_started_game, create_data_test,
+                              delete_data_full_lobby, delete_data_test,
+                              create_data_game_not_waiting)
 
 client = TestClient(app)
 
@@ -242,3 +244,61 @@ class TestStartGame(unittest.TestCase):
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.json()['detail'],
                              'Player is not part of a game.')
+
+
+class TestJoinGame(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_join_valid_game(self):
+        with db_session:
+            card, chat, players, game = create_data_incomplete_lobby()
+
+            payload = {
+                'id_game': game.id,
+                'id_player': players[4].id,
+            }
+
+            response = client.post('/game/join', json=payload)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'Player player5 joined game test successfully.')
+
+    def test_join_full_game(self):
+        with db_session:
+            card, chat, players, game = create_data_full_lobby_ep()
+
+            payload = {
+                'id_game': game.id,
+                'id_player': players[4].id,
+            }
+
+            response = client.post('/game/join', json=payload)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()['detail'],
+                             'Game is full.')
+
+    def test_game_not_waiting_players(self):
+        with db_session:
+            card, chat, players, game = create_data_game_not_waiting()
+
+            payload = {
+                'id_game': game.id,
+                'id_player': players[4].id,
+            }
+
+            response = client.post('/game/join', json=payload)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()['detail'],
+                             'Game is not waiting for players.')
