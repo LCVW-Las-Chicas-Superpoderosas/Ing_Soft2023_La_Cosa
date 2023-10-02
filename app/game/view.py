@@ -169,3 +169,19 @@ def join_game(join_game_data: JoinGameRequest):
                 'host': host
             }
         }
+
+@router.get('/hand/')
+def player_hand(id_usuario: int):
+    with db_session:
+        
+        player: Player = MODELBASE.get_records_by_value(Player, id_usuario)
+        
+        hand = [p.card_token for p in player.cards]
+
+    return {
+        'status_code': 200,
+        'message': f"Player hand",
+        'data': {
+            'hand': hand
+        }
+    }
