@@ -6,12 +6,7 @@ from main import app
 from model_base import ModelBase, initialize_database
 from player.models import Player
 from pony.orm import commit, db_session
-from tests.test_utils import (create_data_full_lobby,
-                              create_data_full_lobby_ep,
-                              create_data_incomplete_lobby,
-                              create_data_started_game, create_data_test,
-                              delete_data_full_lobby, delete_data_test,
-                              create_data_game_not_waiting)
+from tests.test_utils import *
 
 client = TestClient(app)
 
@@ -302,3 +297,66 @@ class TestJoinGame(unittest.TestCase):
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.json()['detail'],
                              'Game is not waiting for players.')
+
+
+class TestGetLobbyInfo(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_startable_lobby(self):
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+
+            headers = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.get('/game/join', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'test lobby information.')
+            self.assertEqual(response.json()['data']['is_host'], True)
+            self.assertEqual(response.json()['data']['can_start'], True)
+
+    
+    def test_cannot_start_not_waiting(self):
+        with db_session:
+            card, chat, players, game = create_data_game_not_waiting()
+
+            headers = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.get('/game/join', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'test lobby information.')
+            self.assertEqual(response.json()['data']['is_host'], True)
+            self.assertEqual(response.json()['data']['can_start'], False)
+
+
+    def test_cannot_start_full(self):
+        with db_session:
+            card, chat, players, game = create_data_game_not_min_players()
+
+            headers = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.get('/game/join', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'test lobby information.')
+            self.assertEqual(response.json()['data']['is_host'], True)
+            self.assertEqual(response.json()['data']['can_start'], False)
