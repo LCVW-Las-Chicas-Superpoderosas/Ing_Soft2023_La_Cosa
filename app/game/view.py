@@ -1,5 +1,5 @@
 from chat.models import Chat
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from game.models import Game, GameStatus
 from model_base import ModelBase
 from player.models import Player
@@ -171,10 +171,6 @@ def join_game(join_game_data: JoinGameRequest):
         }
 
 
-class LobbyInfoRequest(BaseModel):
-    id_player: int
-
-
 def _is_game_startable(game: Game):
     # Check game status and number of players
     # return true if game can be started
@@ -183,12 +179,11 @@ def _is_game_startable(game: Game):
 
 
 @router.get('/game/join')
-def lobby_info(request: LobbyInfoRequest):
-    player_id = request.id_player
+def lobby_info(id_player: int = Header(..., key='id-player')):
 
     with db_session:
         # Check if the player exists
-        player = _player_exists(player_id)
+        player = _player_exists(id_player)
 
         # Get the game
         game = player.game
@@ -203,7 +198,7 @@ def lobby_info(request: LobbyInfoRequest):
         can_start = _is_game_startable(game)
 
         players = [p.to_dict() for p in game.players]
-        is_host = game.host == player_id
+        is_host = game.host == id_player
         return {
             'status_code': 200,
             'detail': f'{game.name} lobby information.',
@@ -212,4 +207,46 @@ def lobby_info(request: LobbyInfoRequest):
                 'is_host': is_host,
                 'can_start': can_start
             }
+        }
+
+
+@router.put('/game/start')
+def start_game(id_player: int = Header(..., key='id-player')):
+    with db_session:
+        # Check if the player exists
+        player = _player_exists(id_player)
+
+        # Get the game
+        game = player.game
+
+        # If player is not part of a game, return error
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Player is not part of a game.')
+
+        # Check if player is the host
+        if game.host != id_player:
+            raise HTTPException(
+                status_code=400,
+                detail='Only the host can start the game.')
+
+        # Check if game can be started
+        if not _is_game_startable(game):
+            raise HTTPException(
+                status_code=400,
+                detail='Game cannot be started.')
+
+        # Set turns
+        game.set_turns()
+
+        # Draw cards
+
+        # Set game status
+        game.status = GameStatus.STARTED.value
+
+        # Return OK
+        return {
+            'status_code': 200,
+            'detail': f'Game {game.name} started successfully.',
         }
