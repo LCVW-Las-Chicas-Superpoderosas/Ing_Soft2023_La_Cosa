@@ -141,3 +141,22 @@ def create_data_game_not_waiting():
     commit()
 
     return card, chat, [player1, player2, player3, player4, player5], game
+
+
+def create_data_game_not_min_players():
+    card = model_base.add_record(Card, name='test_card',
+                                 card_token='test_card', type=CardType.PANIC.value)
+    chat = model_base.add_record(Chat)
+    player1 = model_base.add_record(Player, name='player1', cards=card,
+                                    id=1000)
+    player2 = model_base.add_record(Player, name='player2', cards=card)
+    player3 = model_base.add_record(Player, name='player3', cards=card)
+
+    game = model_base.add_record(Game, name='test', password='', chats=chat,
+                                 cards=card, players=[
+                                     player1, player2, player3], host=1000,
+                                 min_players=4, max_players=5)
+
+    commit()
+
+    return card, chat, [player1, player2, player3], game
