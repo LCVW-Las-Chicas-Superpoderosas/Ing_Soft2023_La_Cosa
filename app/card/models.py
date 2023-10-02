@@ -2,10 +2,11 @@ from uuid import uuid4
 
 from enum import IntEnum
 from model_base import Models
-from pony.orm import PrimaryKey, Required, Set
+from pony.orm import Optional, PrimaryKey, Required, Set
 
 
 class CardType(IntEnum):
+    OTHER = -1
     PANIC = 0
     STAY_AWAY = 1
     INFECTED = 2
@@ -15,7 +16,8 @@ class CardType(IntEnum):
 class Card(Models.Entity):
     id = PrimaryKey(int, auto=True)
     card_token = Required(str, unique=True, index=True, default=str(uuid4()))
-    name = Required(str, unique=True, index=True)
+    name = Required(str)
     type = Required(CardType)
     game = Set('Game')  # Define the reverse attribute as "cards"
     player = Set('Player')  # Define the reverse attribute as "cards"
+    number = Optional(int)  # Number 0 is only for IT card, Null is for not playable cards
