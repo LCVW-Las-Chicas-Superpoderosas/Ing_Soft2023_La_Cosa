@@ -208,3 +208,45 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
                 'can_start': can_start
             }
         }
+
+
+@router.put('/game/start')
+def start_game(id_player: int = Header(..., key='id-player')):
+    with db_session:
+        # Check if the player exists
+        player = _player_exists(id_player)
+
+        # Get the game
+        game = player.game
+
+        # If player is not part of a game, return error
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Player is not part of a game.')
+
+        # Check if player is the host
+        if game.host != id_player:
+            raise HTTPException(
+                status_code=400,
+                detail='Only the host can start the game.')
+
+        # Check if game can be started
+        if not _is_game_startable(game):
+            raise HTTPException(
+                status_code=400,
+                detail='Game cannot be started.')
+
+        # Set turns
+        game.set_turns()
+
+        # Draw cards
+
+        # Set game status
+        game.status = GameStatus.STARTED.value
+
+        # Return OK
+        return {
+            'status_code': 200,
+            'detail': f'Game {game.name} started successfully.',
+        }

@@ -1,9 +1,10 @@
+import json
+import random
 from datetime import datetime
 from enum import IntEnum
 
 from model_base import Models
 from pony.orm import Optional, PrimaryKey, Required, Set
-import json
 
 
 class GameStatus(IntEnum):
@@ -40,12 +41,20 @@ class Game(Models.Entity):
                 continue
             turns_list.append(player.id)
 
+        # Shuffle the list
+        random.shuffle(turns_list)
+
+        # Get host position and put it last
+        host_position = turns_list.index(self.host)
+        turns_list.append(turns_list.pop(host_position))
+
         # Convert the List to JSON List
         json_list = json.dumps(turns_list)
         self.turns = json_list
 
     def next_turn(self):
-        # The first turn goes to the last position and the second turn goes first
+        # The first turn goes to the last position and the second turn goes
+        # first
         turns_list = self.get_turns()
         turns_list.append(turns_list.pop(0))
 
