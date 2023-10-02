@@ -6,7 +6,9 @@ from main import app
 from model_base import ModelBase, initialize_database
 from player.models import Player
 from pony.orm import db_session, commit
-from tests.test_utils import create_data_test, delete_data_test
+from tests.test_utils import (create_data_test, delete_data_test,
+                              create_data_full_lobby, create_data_started_game,
+                              delete_data_full_lobby)
 
 
 client = TestClient(app)
@@ -54,7 +56,7 @@ class TestCreateGameEndpoint(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['detail'],
-            'Game catacumbas_ok created successfully.')
+                         'Game catacumbas_ok created successfully.')
 
     def test_create_game_player_already_part_of_a_game(self):
         with db_session:
@@ -157,7 +159,7 @@ class TestGameActions(unittest.TestCase):
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()['detail'],
-                f'Next turn for game {game.name} set successfully.')
+                             f'Next turn for game {game.name} set successfully.')
             delete_data_test(card, chat, player, game)
 
     def test_next_turn_invalid_game(self):
@@ -169,3 +171,74 @@ class TestGameActions(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['detail'], 'Game not found.')
+
+
+class TestStartGame(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_start_game_ok(self):
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+
+            headers = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.put('/game/start', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             f'Game {game.name} started successfully.')
+
+    def test_start_game_not_the_host(self):
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+
+            headers = {
+                'id-player': str(players[1].id)
+            }
+
+            response = client.put('/game/start', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()['detail'],
+                             'Only the host can start the game.')
+
+    def test_game_is_not_startable(self):
+        with db_session:
+            card, chat, players, game = create_data_started_game()
+
+            headers = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.put('/game/start', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()['detail'],
+                             'Game cannot be started.')
+
+    def test_player_is_not_in_game(self):
+        with db_session:
+            card, chat, players, game = create_data_started_game()
+
+            headers = {
+                'id-player': str(players[4].id)
+            }
+
+            response = client.put('/game/start', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()['detail'],
+                             'Player is not part of a game.')
