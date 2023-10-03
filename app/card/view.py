@@ -63,7 +63,8 @@ def _targeted_effect(target_user, card, user):
         'detail': f'Card {card.name} played successfully',
         'data': {
             "user": user_data,
-            "target_user": target_data
+            "target_user": target_data,
+            "game_over": game.is_game_over()
         }
     }
 
@@ -73,7 +74,6 @@ def play_card(request_body: PlayCardRequest):
     card_token = request_body.card_token
     id_usuario = request_body.id_usuario
     target_id = request_body.target_id
-
     with db_session:
 
         card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)

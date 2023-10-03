@@ -66,6 +66,11 @@ class Game(Models.Entity):
         json_list = json.dumps(turns_list)
         self.turns = json_list
 
+    def is_game_over(self):
+        # Check if all but one player are dead
+        # count alive players in the game with a list comprehension
+        alive_players = self.players.filter(is_alive=True).count()
+        return alive_players <= 1
     def give_cards_to_users(self):
         player_it = random.randint(0, len(self.players) - 1)
 
