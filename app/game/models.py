@@ -71,6 +71,7 @@ class Game(Models.Entity):
         # count alive players in the game with a list comprehension
         alive_players = self.players.filter(is_alive=True).count()
         return alive_players <= 1
+        
     def give_cards_to_users(self):
         player_it = random.randint(0, len(self.players) - 1)
 
