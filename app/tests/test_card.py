@@ -89,3 +89,5 @@ class TestPlayCard(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data['detail'], 'Card test_card played successfully')
+        self.assertEqual(data['data']['user']['id'], player.id)
+        self.assertTrue(data['data']['game_over'])
