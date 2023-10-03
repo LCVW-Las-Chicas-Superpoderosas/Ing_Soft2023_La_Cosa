@@ -242,6 +242,7 @@ def start_game(id_player: int = Header(..., key='id-player')):
 
         # Give cards to users
         game.give_cards_to_users()
+
         players_hands = {}
         for player in game.players:
             players_hands[player.id] = {'cards': [c.card_token for c in player.cards]}

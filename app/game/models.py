@@ -93,8 +93,10 @@ class Game(Models.Entity):
 
             # Remove this after demo
             try:
-                cards[1] = ModelBase().get_first_record_by_value(Card,
+                torch = ModelBase().get_first_record_by_value(Card,
                     name='Lanzallamas', number=self.max_players)
+                if torch is not None:
+                    cards[1] = torch
             except Exception:
                 pass
 

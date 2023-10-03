@@ -183,7 +183,6 @@ class TestStartGame(unittest.TestCase):
             headers = {
                 'id-player': str(players[0].id)
             }
-
             response = client.put('/game/start', headers=headers)
 
             delete_data_full_lobby(card, chat, players, game)
