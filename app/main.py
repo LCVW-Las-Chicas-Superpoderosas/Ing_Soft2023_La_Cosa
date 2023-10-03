@@ -31,8 +31,7 @@ app.add_middleware(
 @db_session
 def populate_db_test():
     model_base = ModelBase()
-    card1 = model_base.add_record(
-        Card, name='lanzallamas', type=CardType.PANIC.value)
+    load_cards()
     player1 = model_base.add_record(Player, name='Gonzalo')
     player2 = model_base.add_record(Player, name='Juan')
     player3 = model_base.add_record(Player, name='Pedro')
@@ -43,7 +42,8 @@ def populate_db_test():
     # add set of players to game
     model_base.add_record(
         Game, name='Bahamas', players=[player1, player2, player3, player4],
-        chats=chat, cards=card1, min_players=4, max_players=5, host=1)
+        chats=chat, cards=model_base.get_records_by_value(Card),
+        min_players=4, max_players=4, host=1)
 
 
 def get_cards_from_text(text):

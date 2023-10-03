@@ -240,13 +240,20 @@ def start_game(id_player: int = Header(..., key='id-player')):
         # Set turns
         game.set_turns()
 
-        # Draw cards
+        # Give cards to users
+        game.give_cards_to_users()
+        players_hands = {}
+        for player in game.players:
+            players_hands[player.id] = {'cards': [c.card_token for c in player.cards]}
 
         # Set game status
         game.status = GameStatus.STARTED.value
-
         # Return OK
         return {
             'status_code': 200,
             'detail': f'Game {game.name} started successfully.',
+            'data': {
+                'turns': game.turns,
+                'player_hands': players_hands
+            }
         }
