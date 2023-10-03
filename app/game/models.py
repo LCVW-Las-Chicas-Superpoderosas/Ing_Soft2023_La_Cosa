@@ -3,8 +3,12 @@ import random
 from datetime import datetime
 from enum import IntEnum
 
-from model_base import Models
+from model_base import Models, ModelBase
+from card.models import Card, CardType
 from pony.orm import Optional, PrimaryKey, Required, Set
+
+
+CARDS_PER_PERSON = 4
 
 
 class GameStatus(IntEnum):
@@ -21,7 +25,7 @@ class Game(Models.Entity):
     created_at = Required(datetime, default=datetime.utcnow)
     host = Required(int)  # Player_id of the host
     chats = Required('Chat')
-    cards = Set('Card', nullable=True)
+    cards = Set('Card', nullable=True, lazy=True)
     players = Set('Player')
     min_players = Required(int)
     max_players = Required(int)
@@ -67,3 +71,30 @@ class Game(Models.Entity):
         # count alive players in the game with a list comprehension
         alive_players = self.players.filter(is_alive=True).count()
         return alive_players <= 1
+    def give_cards_to_users(self):
+        player_it = random.randint(0, len(self.players) - 1)
+
+        # We gonna give cards to each player 4 cards then 4 cards...
+        # dont have time to think about a better approach.
+        # i'm gonna upgrade the algorithm of this function later
+
+        for i, player in enumerate(self.players):
+            cards = self.cards.random(CARDS_PER_PERSON)
+            if i == player_it:
+                cards = list(cards)
+                cards[0] = self.cards.select(number=0).first()
+
+            self.cards.remove(cards)
+
+            # This is needed bcs QueryResults are buggy and not documented...
+            # https://github.com/ponyorm/pony/issues/369
+            cards = list(cards)
+
+            # Remove this after demo
+            try:
+                cards[1] = ModelBase().get_first_record_by_value(Card,
+                    name='Lanzallamas', number=self.max_players)
+            except Exception:
+                pass
+
+            player.add_cards(cards)
