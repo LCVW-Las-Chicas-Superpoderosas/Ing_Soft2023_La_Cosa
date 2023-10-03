@@ -1,10 +1,12 @@
 from datetime import datetime
 from enum import IntEnum
-
-from model_base import Models
-from pony.orm import Optional, PrimaryKey, Required, Set
+from random import shuffle
+from model_base import Models, ModelBase, initialize_database
+from card.models import Card
+from pony.orm import Optional, PrimaryKey, Required, Set, db_session
 import json
 
+model_base = ModelBase()
 
 class GameStatus(IntEnum):
     WAITING = 0
@@ -67,6 +69,8 @@ class Game(Models.Entity):
             if card.id == next_card_id:
                 next_card = card
                 break
+        # The 'for' above theorically can be changed by self.cards.get(id= next_card_id)
+
 
         # Convert the List to JSON List
         json_list = json.dumps(deck_list)
@@ -100,3 +104,48 @@ class Game(Models.Entity):
         # Convert the List to JSON List
         json_list = json.dumps(turns_list)
         self.turns = json_list
+
+    def assign_cards_to_game(self):
+
+        initialize_database()
+
+        amount_of_players = len(self.players)
+
+        with db_session:
+            game_cards: set[Card] = model_base.get_records_by_value(Card, lambda card: card.number <= amount_of_players)
+            self.cards = {card for card in game_cards}
+
+    def initial_repartition_of_cards(self):
+        # This function makes the initial repartition of cards just as intended in real life
+        # Asumes assign_cards_to_game was done.
+        all_cards_id = {card.id for card in self.cards}# Aux
+        la_cosa_card_id = self.cards.get(type==0)
+
+        # Sirve para la reparticion inicial
+        initial_repartition_amount = len(self.players)*4 - 1
+        # Separar n*4-1 cartas
+        mazoMezclaInicial = [card.id for card in self.cards if card.type not in {0,2}][:initial_repartition_amount]
+        # Mezclar
+        shuffle(mazoMezclaInicial)
+        # Anadir La Cosa
+        mazoMezclaInicial.add(la_cosa_card_id)
+        # Mezclar denuevo
+        shuffle(mazoMezclaInicial)
+        # Repartir 4 cartas a cada jugador
+        for player in self.players:
+            for i in range (0,4):
+                player.cards = self.cards.get(id=mazoMezclaInicial[0])
+                mazoMezclaInicial.pop(0)
+
+        # Esto sirve luego para armar el deck restante. Falta completar
+        cartas_a_un_lado1 = [card.id for card in self.cards if card.type == 2] ## Las cartas de infectado
+        cartas_a_un_lado2 = [x.id for x in all_cards_id if x not in mazoMezclaInicial
+                            and x not in cartas_a_un_lado1 
+                            and x.type != 0] # Cartas que sobraron de las type==1
+        
+        initial_deck = cartas_a_un_lado1 + cartas_a_un_lado2
+
+        shuffle(initial_deck)
+
+        for idcartas in initial_deck:
+            self.set_deck(idcartas)

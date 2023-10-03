@@ -169,3 +169,26 @@ class TestGameActions(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['detail'], 'Game not found.')
+
+class TestGame(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        with db_session:
+            
+        
+        self.game = Game()
+        self.game.cards = {
+
+        }
+        self.game.players = {
+
+        }
+        # Create and initialize the database
+        initialize_database()
+    
+    def test_initial_repartition_to_players(self):
+        #Call the function to be tested
+        self.game.test_initial_repartition_to_players()
+
+        for player in self.game.players:
+            self.assertEqual(len(player.cards), 4)
