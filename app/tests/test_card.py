@@ -74,7 +74,7 @@ class TestPlayCard(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 400)
         self.assertEqual(context.exception.detail, 'Target user not found')
 
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'test_card': lambda x: True})
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: True})
     def test_play_card_with_valid_data(self, *args, **kwargs):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -88,6 +88,6 @@ class TestPlayCard(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(data['detail'], 'Card test_card played successfully')
+        self.assertEqual(data['detail'], 'Card create_data_test_card played successfully')
         self.assertEqual(data['data']['user']['id'], player.id)
         self.assertTrue(data['data']['game_over'])
