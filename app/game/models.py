@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import IntEnum
 
 from model_base import Models, ModelBase
-from card.models import Card, CardType
+from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
 
 
@@ -71,7 +71,10 @@ class Game(Models.Entity):
         # count alive players in the game with a list comprehension
         alive_players = self.players.filter(is_alive=True).count()
         return alive_players <= 1
-        
+
+    def check_turn(self, player_id):
+        return player_id == self.get_turns()[0]
+
     def give_cards_to_users(self):
         player_it = random.randint(0, len(self.players) - 1)
 

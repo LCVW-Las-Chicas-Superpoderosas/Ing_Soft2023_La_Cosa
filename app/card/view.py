@@ -2,7 +2,7 @@ from card.effects_mapping import EFFECTS_TO_PLAYERS
 from card.models import Card
 from fastapi import APIRouter
 from fastapi import HTTPException
-from game.models import Game
+from game.models import Game, GameStatus
 from model_base import ModelBase
 from player.models import Player
 from pony.orm import db_session
@@ -16,7 +16,7 @@ MODEL_BASE = ModelBase()
 class PlayCardRequest(BaseModel):
     ''' Model The JSON Request Body '''
     card_token: str
-    id_usuario: int
+    id_player: int
     target_id: int = None  # Default value is None
 
 
@@ -62,9 +62,9 @@ def _targeted_effect(target_user, card, user):
         'status_code': 200,
         'detail': f'Card {card.name} played successfully',
         'data': {
-            "user": user_data,
-            "target_user": target_data,
-            "game_over": game.is_game_over()
+            'user': user_data,
+            'target_user': target_data,
+            'game_over': game.is_game_over()
         }
     }
 
@@ -72,8 +72,9 @@ def _targeted_effect(target_user, card, user):
 @router.post('/hand/play/')
 def play_card(request_body: PlayCardRequest):
     card_token = request_body.card_token
-    id_usuario = request_body.id_usuario
+    id_player = request_body.id_player
     target_id = request_body.target_id
+
     with db_session:
 
         card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
@@ -82,13 +83,21 @@ def play_card(request_body: PlayCardRequest):
         if card is None:
             raise HTTPException(status_code=400, detail=f'Card token: {card_token} not found')
 
-        user = MODEL_BASE.get_first_record_by_value(Player, id=id_usuario)
+        user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
 
         # Check if the user exists
         if user is None:
-            raise HTTPException(status_code=400, detail=f'User {id_usuario} not found')
+            raise HTTPException(status_code=400, detail=f'User {id_player} not found')
+
         if not user.is_alive:
             raise HTTPException(status_code=400, detail=f'User {user.name} is dead')
+
+        if user.game.status != GameStatus.STARTED.value:
+            raise HTTPException(status_code=400, detail=f'Game {user.game.name} is not in progress')
+
+        if not user.game.check_turn(user.id):
+            raise HTTPException(status_code=400, detail=f'It is not {user.name} turn')
+
         if target_id is not None:
             target_user = MODEL_BASE.get_first_record_by_value(
                 Player, id=target_id)
