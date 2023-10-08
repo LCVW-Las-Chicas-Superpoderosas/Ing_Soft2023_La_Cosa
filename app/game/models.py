@@ -70,8 +70,10 @@ class Game(Models.Entity):
     def validate_the_thing_win(self):
         # count alive players in the game with a list comprehension
         alive_players = self.players.filter(is_alive=True, infected=False)
-        return alive_players.count() == 1 and \
-            alive_players.first().id == self.the_thing
+        if alive_players.count() == 1 and alive_players.first().id == self.the_thing:
+            self.status = GameStatus.FINISHED.value
+            return True
+        return False
 
     def validate_humans_win(self):
         # Check if all but one player are dead
@@ -81,7 +83,10 @@ class Game(Models.Entity):
         if it_player is None:
             raise ValueError('The thing player not found in the game.')
 
-        return not it_player.is_alive
+        if not it_player.is_alive:
+            self.status = GameStatus.FINISHED.value
+            return True
+        return False
 
     def give_cards_to_users(self):
         player_it = random.randint(0, len(self.players) - 1)
