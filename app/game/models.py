@@ -118,3 +118,8 @@ class Game(Models.Entity):
                 pass
 
             player.add_cards(cards)
+
+    def clean_game(self):
+        self.players = []
+        self.cards = []
+        self.chat = None

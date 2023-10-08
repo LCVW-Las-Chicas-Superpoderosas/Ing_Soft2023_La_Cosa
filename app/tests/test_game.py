@@ -361,3 +361,47 @@ class TestGetLobbyInfo(unittest.TestCase):
                              'create_data_game_not_min_players lobby information.')
             self.assertEqual(response.json()['data']['is_host'], True)
             self.assertEqual(response.json()['data']['can_start'], False)
+
+
+class TestDeleteGame(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_delete_game(self):
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+
+            data = {
+                'id_game': game.id
+            }
+
+            response = client.request('DELETE', '/game/', json=data)
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_delete_game_not_valid_request(self):
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+            data = {
+                'pepe': game.id
+            }
+
+            response = client.request('DELETE', '/game/', json=data)
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 422)
+
+    def test_delete_game_not_valid(self):
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+            data = {
+                'id_game': 999
+            }
+
+            response = client.request('DELETE', '/game/', json=data)
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 400)
