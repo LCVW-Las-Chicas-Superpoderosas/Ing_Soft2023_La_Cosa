@@ -10,7 +10,7 @@ from tests.test_utils import (create_data_full_lobby,
     create_data_full_lobby_ep,
     create_data_game_not_min_players, create_data_game_not_waiting,
     create_data_incomplete_lobby, create_data_started_game,
-    create_data_test, delete_data_full_lobby, delete_data_test)
+    create_data_test, delete_data_full_lobby)
 
 
 client = TestClient(app)
@@ -162,7 +162,7 @@ class TestGameActions(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()['detail'],
                              f'Next turn for game {game.name} set successfully.')
-            delete_data_test(card, chat, player, game)
+            delete_data_full_lobby(card, chat, player, game)
 
     def test_next_turn_invalid_game(self):
         # Test the next_turn endpoint

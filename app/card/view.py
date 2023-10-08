@@ -62,9 +62,10 @@ def _targeted_effect(target_user, card, user):
         'status_code': 200,
         'detail': f'Card {card.name} played successfully',
         'data': {
-            "user": user_data,
-            "target_user": target_data,
-            "game_over": game.is_game_over()
+            'user': user_data,
+            'target_user': target_data,
+            'the_thing_win': game.validate_the_thing_win(),
+            'the_humans_win': game.validate_humans_win()
         }
     }
 

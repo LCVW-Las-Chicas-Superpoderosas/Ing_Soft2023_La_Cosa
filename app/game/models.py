@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import IntEnum
 
 from model_base import Models, ModelBase
-from card.models import Card, CardType
+from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
 
 
@@ -24,6 +24,7 @@ class Game(Models.Entity):
     password = Optional(str, nullable=True)
     created_at = Required(datetime, default=datetime.utcnow)
     host = Required(int)  # Player_id of the host
+    the_thing = Optional(int, nullable=True)  # Player_id of the thing
     chats = Required('Chat')
     cards = Set('Card', nullable=True, lazy=True)
     players = Set('Player')
@@ -66,14 +67,25 @@ class Game(Models.Entity):
         json_list = json.dumps(turns_list)
         self.turns = json_list
 
-    def is_game_over(self):
+    def validate_the_thing_win(self):
+        # count alive players in the game with a list comprehension
+        alive_players = self.players.filter(is_alive=True, infected=False)
+        return alive_players.count() == 1 and \
+            alive_players.first().id == self.the_thing
+
+    def validate_humans_win(self):
         # Check if all but one player are dead
         # count alive players in the game with a list comprehension
-        alive_players = self.players.filter(is_alive=True).count()
-        return alive_players <= 1
-        
+        it_player = self.players.filter(id=self.the_thing).first()
+
+        if it_player is None:
+            raise ValueError('The thing player not found in the game.')
+
+        return not it_player.is_alive
+
     def give_cards_to_users(self):
         player_it = random.randint(0, len(self.players) - 1)
+        self.the_thing = player_it
 
         # We gonna give cards to each player 4 cards then 4 cards...
         # dont have time to think about a better approach.
