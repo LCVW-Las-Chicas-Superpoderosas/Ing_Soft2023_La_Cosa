@@ -21,7 +21,7 @@ def create_data_test():
 
         game = model_base.add_record(Game, name='create_data_test', password='', chats=chat,
             cards=card, players=[player, player2], host=player.id, min_players=4, max_players=8,
-            the_thing=player2.id, turns=json.dumps([player.id]))
+            the_thing=player2.id, turns=json.dumps([player.id, player2.id]), status=1)
         commit()
     except Exception:
         card = model_base.get_first_record_by_value(Card, card_token='create_data_test_card')

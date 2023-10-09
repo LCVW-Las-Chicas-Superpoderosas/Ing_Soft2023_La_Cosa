@@ -24,7 +24,7 @@ class TestPlayCard(unittest.TestCase):
             card, chat, player, game = create_data_test()
             payload = {
                 'card_token': 'test_card_fake',
-                'id_usuario': player[0].id,
+                'id_player': player[0].id,
                 'target_id': player[0].id
             }
             with self.assertRaises(HTTPException) as context:
@@ -49,7 +49,7 @@ class TestPlayCard(unittest.TestCase):
             card, chat, player, game = create_data_test()
             payload = {
                 'card_token': card.card_token,
-                'id_usuario': 999,  # Use an ID that doesn't exist
+                'id_player': 999,  # Use an ID that doesn't exist
                 'target_id': player[0].id
             }
             with self.assertRaises(HTTPException) as context:
@@ -64,7 +64,7 @@ class TestPlayCard(unittest.TestCase):
             card, chat, player, game = create_data_test()
             payload = {
                 'card_token': card.card_token,
-                'id_usuario': player[0].id,
+                'id_player': player[0].id,
                 'target_id': 999  # Use a target ID that doesn't exist
             }
             with self.assertRaises(HTTPException) as context:
@@ -82,7 +82,7 @@ class TestPlayCard(unittest.TestCase):
             commit()
             payload = {
                 'card_token': card.card_token,
-                'id_usuario': player[0].id,
+                'id_player': player[0].id,
                 'target_id': player[0].id
             }
             response = client.post('/hand/play/', data=json.dumps(payload))
@@ -104,7 +104,7 @@ class TestPlayCard(unittest.TestCase):
             commit()
             payload = {
                 'card_token': card.card_token,
-                'id_usuario': player[0].id,
+                'id_player': player[0].id,
                 'target_id': player[0].id
             }
             response = client.post('/hand/play/', data=json.dumps(payload))
@@ -123,10 +123,11 @@ class TestPlayCard(unittest.TestCase):
             card, chat, player, game = create_data_test()
             player[0].is_alive = False
             player[1].is_alive = True
+            game.next_turn()
             commit()
             payload = {
                 'card_token': card.card_token,
-                'id_usuario': player[1].id,
+                'id_player': player[1].id,
                 'target_id': player[1].id
             }
             response = client.post('/hand/play/', data=json.dumps(payload))

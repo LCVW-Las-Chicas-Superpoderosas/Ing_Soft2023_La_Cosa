@@ -67,6 +67,10 @@ class Game(Models.Entity):
         json_list = json.dumps(turns_list)
         self.turns = json_list
 
+    def check_turn(self, player_id):
+        turns = self.get_turns()
+        return player_id == turns[0]
+
     def validate_the_thing_win(self):
         # count alive players in the game with a list comprehension
         alive_players = self.players.filter(is_alive=True, infected=False)
