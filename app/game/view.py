@@ -300,16 +300,17 @@ def player_hand(id_usuario: int):
 
 
 @router.put('/hand')  # Gets from deck
-def put_hand(id_usuario: int):
+def put_hand(id_player: int = Header(..., key='id-player')):
     with db_session:
 
-        player: Player = MODELBASE.get_records_by_value(Player, id=id_usuario)
-        game: Game = MODELBASE.get_records_by_value(Game, player.game)
+        player = MODELBASE.get_first_record_by_value(Player, id=id_player)
+        game = player.game
         # This will need an update when we add the card that makes u pick more
         # than one card.
 
         # Get card from deck
         cards = game.next_card_in_deck()
+
         if cards is None:
             raise HTTPException(
                 status_code=400,
@@ -318,14 +319,10 @@ def put_hand(id_usuario: int):
         game.delete_first_card_in_deck()
 
         # Stolen cards from deck
-        picked_cards = []
-        for card in cards:
-            card_token = card.card_token
-            picked_cards.append(card_token)
+        picked_cards = cards
 
         # Get next_card_type
-        next_card_id = game.next_card_in_deck()
-        next_card = game.cards.select(id=next_card_id)
+        next_card = game.next_card_in_deck()
         next_card_type = next_card.type
 
 
