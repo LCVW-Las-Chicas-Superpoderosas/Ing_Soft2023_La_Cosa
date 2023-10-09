@@ -155,7 +155,7 @@ class Game(Models.Entity):
         # Get id from new_card
         new_card_in_deck_id = new_card_in_deck.id
         # Insert new element
-        deck_list.insert(new_card_in_deck_id, 0)
+        deck_list.append(new_card_in_deck_id)
 
         # Convert the List to JSON List
         json_list = json.dumps(deck_list)
@@ -221,16 +221,15 @@ class Game(Models.Entity):
                 mazoMezclaInicial.pop(0)
         # Esto sirve luego para armar el deck restante. Falta completar
         # Las cartas de infectado
-        cartas_a_un_lado1 = [card.id for card in self.cards if card.type == 2]
-        cartas_a_un_lado2 = [x.id for x in all_cards
-                             if x not in mazoMezclaInicial
-                             and x not in cartas_a_un_lado1
-                             and x.type != 0]
+        cartas_a_un_lado1 = [card for card in self.cards if card.type == 2]
+        cartas_a_un_lado2 = [card for card in all_cards
+                             if card not in mazoMezclaInicial
+                             and card not in cartas_a_un_lado1
+                             and card.type != 0]
 
         initial_deck = cartas_a_un_lado1 + cartas_a_un_lado2
-
+        print(initial_deck)
         random.shuffle(initial_deck)
-
-        for idcarta in initial_deck:
-            card = self.cards.select(id=idcarta).first()
+        print(initial_deck)
+        for card in initial_deck:
             self.set_deck(card)
