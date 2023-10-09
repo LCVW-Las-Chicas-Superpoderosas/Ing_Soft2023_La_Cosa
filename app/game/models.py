@@ -3,10 +3,11 @@ import random
 from datetime import datetime
 from enum import IntEnum
 
-from model_base import Models, ModelBase
+from model_base import Models, ModelBase, db_session
 from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
 
+model_base = ModelBase()
 
 CARDS_PER_PERSON = 4
 
@@ -31,6 +32,8 @@ class Game(Models.Entity):
     min_players = Required(int)
     max_players = Required(int)
     turns = Optional(str, nullable=True)  # Store turns as a JSON string
+    deck = Optional(str, nullable=True)
+    discard_pile = Optional(str, nullable=True)
 
     def get_turns(self):
         # Convert the JSON list into a python list
@@ -127,3 +130,107 @@ class Game(Models.Entity):
         self.players = []
         self.cards = []
         self.chat = None
+
+    def get_discard_pile(self):
+        # JSON list -> Python list
+        return json.loads(self.discard_pile) if self.discard_pile else []
+
+    def set_discard_pile(self, new_discarded_card):
+
+        discard_pile_list = self.get_discard_pile()
+
+        discard_pile_list.append(new_discarded_card.id)
+
+        # List -> Json List
+        json_list = json.dumps(discard_pile_list)
+        self.discard_pile = json_list
+
+    def get_deck(self):
+        # Convert the JSON list into a python list
+        return json.loads(self.deck) if self.deck else []
+
+    def set_deck(self, new_card_in_deck):
+        # Get actual list
+        deck_list = self.get_deck()
+        # Get id from new_card
+        new_card_in_deck_id = new_card_in_deck.id
+        # Insert new element
+        deck_list.insert(new_card_in_deck_id, 0)
+
+        # Convert the List to JSON List
+        json_list = json.dumps(deck_list)
+        self.deck = json_list
+
+    def next_card_in_deck(self):
+        # JSON list to List and get first card.
+        deck_list = self.get_deck()
+        next_card_id = deck_list[0]
+
+        # Retrieve the card in the set
+        next_card = self.cards.select(id=next_card_id).first()
+
+        return next_card
+
+    def delete_first_card_in_deck(self):
+        # JSON list to List and get first card.
+        deck_list = self.get_deck()
+        deck_list.pop(0)
+        # Convert the List to JSON List
+        json_list = json.dumps(deck_list)
+        self.turns = json_list
+
+    def assign_cards_to_game(self):
+
+        amount_of_players = len(self.players)
+
+        with db_session:
+            get_cards = Card.select()
+            get_cards = list(get_cards)
+            n = len(get_cards)
+            for i in range(0, n):
+                if get_cards[i].number is not None:
+                    bool = False
+                    # Esto lo hice porque hay 2 cartas con number=NULL
+                    bool = get_cards[i].number <= amount_of_players
+                    if bool:
+                        self.cards.add(get_cards[i])
+
+    def initial_repartition_of_cards(self):
+        # This function makes the initial repartition of cards just as intended
+        # in real life
+        self.assign_cards_to_game()
+        all_cards = {card for card in self.cards}  # Aux
+        la_cosa_card = self.cards.select(number=0).first()
+        la_cosa_card_id = la_cosa_card.id
+        # Sirve para la reparticion inicial
+        initial_repartition_amount = len(self.players) * 4 - 1
+        # Separar n*4-1 cartas
+        mazoMezclaInicial = [card.id for card in self.cards
+                             if card.type not in
+                             {0, 2, 3}][:initial_repartition_amount]
+        # Mezclar
+        random.shuffle(mazoMezclaInicial)
+        # Anadir La Cosa a las n*4-1 cartas para hacerlas n*4 cartas.
+        mazoMezclaInicial.append(la_cosa_card_id)
+        # Mezclar denuevo
+        random.shuffle(mazoMezclaInicial)
+        # Repartir 4 cartas a cada jugador
+        for player in self.players:
+            for i in range(0, 4):
+                player.cards = self.cards.select(id=mazoMezclaInicial[0])
+                mazoMezclaInicial.pop(0)
+        # Esto sirve luego para armar el deck restante. Falta completar
+        # Las cartas de infectado
+        cartas_a_un_lado1 = [card.id for card in self.cards if card.type == 2]
+        cartas_a_un_lado2 = [x.id for x in all_cards
+                             if x not in mazoMezclaInicial
+                             and x not in cartas_a_un_lado1
+                             and x.type != 0]
+
+        initial_deck = cartas_a_un_lado1 + cartas_a_un_lado2
+
+        random.shuffle(initial_deck)
+
+        for idcarta in initial_deck:
+            card = self.cards.select(id=idcarta).first()
+            self.set_deck(card)

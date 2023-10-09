@@ -241,7 +241,7 @@ def start_game(id_player: int = Header(..., key='id-player')):
         game.set_turns()
 
         # Give cards to users
-        game.give_cards_to_users()
+        game.initial_repartition_of_cards()
 
         players_hands = {}
         for player in game.players:
@@ -279,3 +279,62 @@ def delete_game(game_data: GameDeleteRequest):
         'detail': 'Game deleted successfully.',
         'data': {}
     }
+
+@router.get('/hand')
+def player_hand(id_usuario: int):
+    with db_session:
+
+        player: Player = MODELBASE.get_first_record_by_value(
+            Player, id=id_usuario)
+
+        # This just gives to the players the hand
+        hand = [p.card_token for p in player.cards]
+
+    return {
+        'status_code': 200,
+        'message': f"Player hand",
+        'data': {
+            'hand': hand
+        }
+    }
+
+
+@router.put('/hand')  # Gets from deck
+def put_hand(id_usuario: int):
+    with db_session:
+
+        player: Player = MODELBASE.get_records_by_value(Player, id=id_usuario)
+        game: Game = MODELBASE.get_records_by_value(Game, player.game)
+        # This will need an update when we add the card that makes u pick more
+        # than one card.
+
+        # Get card from deck
+        cards = game.next_card_in_deck()
+        if cards is None:
+            raise HTTPException(
+                status_code=400,
+                detail='No more cards in deck'
+            )
+        game.delete_first_card_in_deck()
+
+        # Stolen cards from deck
+        picked_cards = []
+        for card in cards:
+            card_token = card.card_token
+            picked_cards.append(card_token)
+
+        # Get next_card_type
+        next_card_id = game.next_card_in_deck()
+        next_card = game.cards.select(id=next_card_id)
+        next_card_type = next_card.type
+
+
+    return {
+        'status_code': 200,
+        'message': f"Succesfully retrieved stolen cards from deck with next_card_type",
+        'data': {
+            'picked_cards': picked_cards,
+            'next_card_type': next_card_type
+        }
+    }
+
