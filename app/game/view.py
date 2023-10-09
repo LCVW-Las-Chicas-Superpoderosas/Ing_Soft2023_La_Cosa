@@ -174,8 +174,8 @@ def join_game(join_game_data: JoinGameRequest):
 def _is_game_startable(game: Game):
     # Check game status and number of players
     # return true if game can be started
-    return (game.status == GameStatus.WAITING.value
-            and len(game.players) >= game.min_players)
+    return (game.status == GameStatus.WAITING.value and
+        len(game.players) >= game.min_players)
 
 
 @router.get('/game/join')
@@ -245,7 +245,9 @@ def start_game(id_player: int = Header(..., key='id-player')):
 
         players_hands = {}
         for player in game.players:
-            players_hands[player.id] = {'cards': [c.card_token for c in player.cards]}
+            players_hands[player.id] = {
+                'cards': [c.card_token for c in player.cards]
+            }
 
         # Set game status
         game.status = GameStatus.STARTED.value
@@ -258,3 +260,22 @@ def start_game(id_player: int = Header(..., key='id-player')):
                 'player_hands': players_hands
             }
         }
+
+
+class GameDeleteRequest(BaseModel):
+    id_game: int
+
+
+@router.delete('/game')
+def delete_game(game_data: GameDeleteRequest):
+    with db_session:
+        game = MODELBASE.get_first_record_by_value(Game, id=game_data.id_game)
+        if game is None:
+            raise HTTPException(status_code=400, detail='Game not found.')
+        game.clean_game()
+        game.delete()
+    return {
+        'status_code': 200,
+        'detail': 'Game deleted successfully.',
+        'data': {}
+    }

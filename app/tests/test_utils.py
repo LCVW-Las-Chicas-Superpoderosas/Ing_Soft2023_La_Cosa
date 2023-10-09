@@ -16,18 +16,20 @@ def create_data_test():
             card_token='create_data_test_card', type=CardType.PANIC.value)
         chat = model_base.add_record(Chat)
         player = model_base.add_record(Player, name='create_data_test', cards=card)
+        player2 = model_base.add_record(Player, name='create_data_test_it', cards=card)
         commit()
 
         game = model_base.add_record(Game, name='create_data_test', password='', chats=chat,
-            cards=card, players=player, host=player.id, min_players=4, max_players=8,
-            turns=json.dumps([player.id]))
+            cards=card, players=[player, player2], host=player.id, min_players=4, max_players=8,
+            the_thing=player2.id, turns=json.dumps([player.id]))
         commit()
     except Exception:
         card = model_base.get_first_record_by_value(Card, card_token='create_data_test_card')
         chat = model_base.get_first_record_by_value(Chat)
         player = model_base.get_first_record_by_value(Player, name='create_data_test')
+        player2 = model_base.get_first_record_by_value(Player, name='create_data_test_it')
         game = model_base.get_first_record_by_value(Game, name='create_data_test')
-    return card, chat, player, game
+    return card, chat, [player, player2], game
 
 
 def create_data_full_lobby():
@@ -47,7 +49,7 @@ def create_data_full_lobby():
 
         game = model_base.add_record(Game, name='create_data_full_lobby', password='', chats=chat,
             cards=model_base.get_records_by_value(Card, name='create_data_full_lobby_card'),
-            players=[player1, player2, player3, player4],
+            players=[player1, player2, player3, player4], the_thing=player2.id,
             host=player1.id, min_players=4, max_players=4)
         commit()
     except Exception:
@@ -74,7 +76,7 @@ def create_data_started_game():
 
         game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
             cards=card, players=[player1, player2, player3, player4], host=player1.id,
-            min_players=4, max_players=4, status=1)
+            the_thing=player2.id, min_players=4, max_players=4, status=1)
 
         commit()
     except Exception:
@@ -104,7 +106,7 @@ def create_data_incomplete_lobby():
 
         game = model_base.add_record(Game, name='create_data_incomplete_lobby', password='', chats=chat,
             cards=card, players=[player1, player2, player3, player4], host=player1.id,
-            min_players=4, max_players=5)
+            min_players=4, max_players=5, the_thing=player2.id)
 
         commit()
 
@@ -135,7 +137,7 @@ def create_data_full_lobby_ep():
 
         game = model_base.add_record(Game, name='create_data_full_lobby_ep', password='', chats=chat,
             cards=card, players=[player1, player2, player3, player4], host=player1.id,
-            min_players=4, max_players=4)
+            min_players=4, max_players=4, the_thing=player2.id)
         commit()
     except Exception:
         game = model_base.get_first_record_by_value(Game, name='create_data_full_lobby_ep')
@@ -164,7 +166,7 @@ def create_data_game_not_waiting():
 
         game = model_base.add_record(Game, name='create_data_game_not_waiting', password='', chats=chat,
             cards=card, players=[player1, player2, player3, player4], host=player1.id,
-            min_players=4, max_players=5, status=1)
+            min_players=4, max_players=5, status=1, the_thing=player2.id)
 
         commit()
 
@@ -193,7 +195,7 @@ def create_data_game_not_min_players():
 
         game = model_base.add_record(Game, name='create_data_game_not_min_players', password='', chats=chat,
             cards=card, players=[player1, player2, player3], host=player1.id,
-            min_players=4, max_players=5)
+            min_players=4, max_players=5, the_thing=player2.id)
 
         commit()
 
@@ -218,10 +220,3 @@ def delete_data_full_lobby(cards, chat, players, game):
         model_base.delete_record(cards)
     model_base.delete_record(game)
     model_base.delete_record(chat)
-
-
-def delete_data_test(card, chat, player, game):
-    model_base.delete_record(game)
-    model_base.delete_record(chat)
-    model_base.delete_record(player)
-    model_base.delete_record(card)
