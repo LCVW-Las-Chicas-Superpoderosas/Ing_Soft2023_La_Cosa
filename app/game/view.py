@@ -210,8 +210,13 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
         }
 
 
+class GameStartRequest(BaseModel):
+    id_player: int
+
 @router.put('/game/start')
-def start_game(id_player: int = Header(..., key='id-player')):
+def start_game(game_data: GameStartRequest):
+    id_player = game_data.id_player
+    
     with db_session:
         # Check if the player exists
         player = _player_exists(id_player)
