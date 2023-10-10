@@ -11,7 +11,8 @@ from tests.test_utils import (create_data_full_lobby,
     create_data_game_not_min_players, create_data_game_not_waiting,
     create_data_incomplete_lobby, create_data_started_game,
     create_data_test, delete_data_full_lobby,
-    create_data_cards_given)
+    create_data_cards_given,
+    create_data_cards_given2)
 
 
 client = TestClient(app)
@@ -423,6 +424,22 @@ class TestInitialRepartitionGame(unittest.TestCase):
             response = client.request('PUT', '/hand/', headers=headers)
 
             delete_data_full_lobby(card, chat, players, game)
-            
+
             self.assertEqual(response.status_code, 200)
+            
+
+    def test_get_hand(self):
+        with db_session:
+            card, chat, players, game = create_data_cards_given2()
+
+            header = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.request('GET', '/hand/', headers=header)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+
 

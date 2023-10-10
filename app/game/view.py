@@ -281,11 +281,11 @@ def delete_game(game_data: GameDeleteRequest):
     }
 
 @router.get('/hand')
-def player_hand(id_usuario: int):
+def player_hand(id_player: int = Header(..., key='id-player')):
     with db_session:
 
         player: Player = MODELBASE.get_first_record_by_value(
-            Player, id=id_usuario)
+            Player, id=id_player)
 
         # This just gives to the players the hand
         hand = [p.card_token for p in player.cards]
