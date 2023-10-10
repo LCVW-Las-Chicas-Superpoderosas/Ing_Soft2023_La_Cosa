@@ -319,12 +319,12 @@ def put_hand(id_player: int = Header(..., key='id-player')):
         game.delete_first_card_in_deck()
 
         # Stolen cards from deck
-        picked_cards = cards
+        picked_cards = []
+        picked_cards.append(cards.card_token)
 
         # Get next_card_type
         next_card = game.next_card_in_deck()
         next_card_type = next_card.type
-
 
     return {
         'status_code': 200,

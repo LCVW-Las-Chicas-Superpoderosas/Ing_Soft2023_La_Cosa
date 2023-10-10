@@ -426,7 +426,7 @@ class TestInitialRepartitionGame(unittest.TestCase):
             delete_data_full_lobby(card, chat, players, game)
 
             self.assertEqual(response.status_code, 200)
-            
+            breakpoint()
 
     def test_get_hand(self):
         with db_session:
