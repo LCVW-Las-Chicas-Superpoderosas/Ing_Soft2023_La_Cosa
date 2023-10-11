@@ -3,7 +3,7 @@ from fastapi import APIRouter, Header, HTTPException
 from game.models import Game, GameStatus
 from model_base import ModelBase
 from player.models import Player
-from pony.orm import db_session, select
+from pony.orm import db_session
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -175,7 +175,7 @@ def _is_game_startable(game: Game):
     # Check game status and number of players
     # return true if game can be started
     return (game.status == GameStatus.WAITING.value and
-            len(game.players) >= game.min_players)
+        len(game.players) >= game.min_players)
 
 
 @router.get('/game/join')
@@ -284,7 +284,7 @@ def delete_game(game_data: GameDeleteRequest):
 @router.get('/game/list')
 def get_games_list():
     with db_session:
-        games = select(g for g in Game)[:]
+        games = MODELBASE.get_records_by_value(Game)
         games_list = []
 
         for game in games:
