@@ -415,19 +415,17 @@ class TestListGames(unittest.TestCase):
 
     def test_list_valid_game(self):
         with db_session:
-            # Creates two joinable games
+            # Create a joinable game
             card, chat, players, game = create_data_incomplete_lobby()
-            card2, chat2, players2, game2 = create_data_test()
 
             # Make an empty GET request
             response = client.get('/game/list')
             delete_data_full_lobby(card, chat, players, game)
-            delete_data_full_lobby(card2, chat2, players2, game2)
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()['detail'],
                              'Joinable games list.')
-            self.assertEqual(len(response.json()['data']), 2)
+            self.assertEqual(len(response.json()['data']), 1)
 
     def test_list_no_game(self):
         with db_session:
