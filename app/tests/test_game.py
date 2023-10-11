@@ -185,10 +185,10 @@ class TestStartGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_full_lobby()
 
-            headers = {
-                'id-player': str(players[0].id)
+            payload = {
+                'id_player': str(players[0].id)
             }
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
@@ -199,11 +199,11 @@ class TestStartGame(unittest.TestCase):
     def test_start_game_not_the_host(self):
         with db_session:
             card, chat, players, game = create_data_full_lobby()
-            headers = {
-                'id-player': str(players[3].id)
+            payload = {
+                'id_player': str(players[3].id)
             }
 
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
@@ -215,11 +215,11 @@ class TestStartGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_started_game()
             game.host = players[0].id
-            headers = {
-                'id-player': str(players[0].id)
+            payload = {
+                'id_player': str(players[0].id)
             }
 
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
@@ -231,11 +231,11 @@ class TestStartGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_started_game()
 
-            headers = {
-                'id-player': str(players[4].id)
+            payload = {
+                'id_player': str(players[4].id)
             }
 
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
