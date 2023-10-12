@@ -211,8 +211,13 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
         }
 
 
+class GameStartRequest(BaseModel):
+    id_player: int
+
 @router.put('/game/start')
-def start_game(id_player: int = Header(..., key='id-player')):
+def start_game(game_data: GameStartRequest):
+    id_player = game_data.id_player
+    
     with db_session:
         # Check if the player exists
         player = _player_exists(id_player)
@@ -375,3 +380,24 @@ def put_hand(id_player: int = Header(..., key='id-player')):
             'next_card_type': next_card_type
         }
     }
+@router.get('/game/list')
+def get_games_list():
+    with db_session:
+        games = MODELBASE.get_records_by_value(Game)
+        games_list = []
+
+        for game in games:
+            if (game.status == GameStatus.WAITING.value and
+                    len(game.players) < game.max_players):
+                games_list.append({
+                    'game_id': game.id,
+                    'player_quantity': game.players.count(),
+                    'max_players': game.max_players,
+                    'name': game.name
+                })
+
+        return {
+            'status_code': 200,
+            'detail': 'Joinable games list.',
+            'data': games_list
+        }

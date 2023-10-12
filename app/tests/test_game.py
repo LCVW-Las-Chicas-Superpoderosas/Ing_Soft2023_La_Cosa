@@ -187,10 +187,10 @@ class TestStartGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_full_lobby()
 
-            headers = {
-                'id-player': str(players[0].id)
+            payload = {
+                'id_player': str(players[0].id)
             }
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
@@ -201,11 +201,11 @@ class TestStartGame(unittest.TestCase):
     def test_start_game_not_the_host(self):
         with db_session:
             card, chat, players, game = create_data_full_lobby()
-            headers = {
-                'id-player': str(players[3].id)
+            payload = {
+                'id_player': str(players[3].id)
             }
 
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
@@ -217,11 +217,11 @@ class TestStartGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_started_game()
             game.host = players[0].id
-            headers = {
-                'id-player': str(players[0].id)
+            payload = {
+                'id_player': str(players[0].id)
             }
 
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
@@ -233,11 +233,11 @@ class TestStartGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_started_game()
 
-            headers = {
-                'id-player': str(players[4].id)
+            payload = {
+                'id_player': str(players[4].id)
             }
 
-            response = client.put('/game/start', headers=headers)
+            response = client.put('/game/start', json=payload)
 
             delete_data_full_lobby(card, chat, players, game)
 
@@ -461,3 +461,52 @@ class TestInitialRepartitionGame(unittest.TestCase):
 
             self.assertEqual(responsePut.status_code, 400)
             self.assertEqual(responseGet.status_code, 400)
+
+
+class TestListGames(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_list_valid_game(self):
+        with db_session:
+            # Create a joinable game
+            card, chat, players, game = create_data_incomplete_lobby()
+
+            # Make an empty GET request
+            response = client.get('/game/list')
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'Joinable games list.')
+            self.assertEqual(len(response.json()['data']), 1)
+
+    def test_list_no_game(self):
+        with db_session:
+            # Make an empty GET request
+            response = client.get('/game/list')
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'Joinable games list.')
+            self.assertEqual(len(response.json()['data']), 0)
+
+    def test_list_no_valid_games(self):
+        with db_session:
+            # Creates two non-joinable games
+            # Case: Full game
+            card, chat, players, game = create_data_full_lobby()
+            # Case: Game not waiting for players
+            card2, chat2, players2, game2 = create_data_game_not_waiting()
+
+            # Make an empty GET request
+            response = client.get('/game/list')
+            delete_data_full_lobby(card, chat, players, game)
+            delete_data_full_lobby(card2, chat2, players2, game2)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'Joinable games list.')
+            self.assertEqual(len(response.json()['data']), 0)
