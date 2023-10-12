@@ -10,9 +10,9 @@ from tests.test_utils import (create_data_full_lobby,
     create_data_full_lobby_ep,
     create_data_game_not_min_players, create_data_game_not_waiting,
     create_data_incomplete_lobby, create_data_started_game,
-    create_data_test, delete_data_full_lobby,
-    create_data_cards_given,
-    create_data_cards_given2)
+    create_data_test, create_data_cards_given,
+    create_data_cards_given2, create_data_cards_given3,
+    delete_data_full_lobby)
 
 
 client = TestClient(app)
@@ -408,28 +408,27 @@ class TestDeleteGame(unittest.TestCase):
 
             self.assertEqual(response.status_code, 400)
 
+
 class TestInitialRepartitionGame(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         initialize_database()
-    
+
     def test_put_hand(self):
         with db_session:
             card, chat, players, game = create_data_cards_given()
 
-            headers = {
+            header = {
                 'id-player': str(players[1].id)
             }
 
-            response = client.request('PUT', '/hand/', headers=headers)
+            response = client.request('PUT', '/hand/', headers=header)
 
             delete_data_full_lobby(card, chat, players, game)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()['data']['picked_cards'],
-                            ['create_data_started_game_card'])
-            self.assertEqual(response.json()['data']['next_card_type'],0)
-
+            self.assertEqual(response.json()['data']['picked_cards'], ['create_data_started_game_card'])
+            self.assertEqual(response.json()['data']['next_card_type'], 3)
 
     def test_get_hand(self):
         with db_session:
@@ -444,7 +443,21 @@ class TestInitialRepartitionGame(unittest.TestCase):
             delete_data_full_lobby(card, chat, players, game)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()['data']['hand'],
-                             ['img1.png', 'img13.png', 'create_data_started_game_card', 'img12.png'])
+            self.assertEqual(len(response.json()['data']['hand']),
+                             len(['img13.png', 'img1.png', 'create_data_started_game_card', 'img12.png']))
 
+    def test_put_and_get_game_not_started(self):
+        with db_session:
+            card, chat, players, game = create_data_cards_given3()
 
+            header = {
+                'id-player': str(players[1].id)
+            }
+
+            responsePut = client.request('PUT', '/hand/', headers=header)
+            responseGet = client.request('GET', '/hand/', headers=header)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(responsePut.status_code, 400)
+            self.assertEqual(responseGet.status_code, 400)

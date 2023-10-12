@@ -104,7 +104,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--load-cards',
         type=bool,
-        default=True,
+        default=False,
         help='If True, then populate the database with the game cards.')
 
     args = parser.parse_args()
