@@ -1,3 +1,6 @@
+import json
+import random
+
 from chat.models import Chat
 from fastapi import APIRouter, Header, HTTPException
 from game.models import Game, GameStatus
@@ -5,7 +8,6 @@ from model_base import ModelBase
 from player.models import Player
 from pony.orm import commit, db_session
 from pydantic import BaseModel
-import random
 
 router = APIRouter()
 MODELBASE = ModelBase()
@@ -214,10 +216,11 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
 class GameStartRequest(BaseModel):
     id_player: int
 
+
 @router.put('/game/start')
 def start_game(game_data: GameStartRequest):
     id_player = game_data.id_player
-    
+
     with db_session:
         # Check if the player exists
         player = _player_exists(id_player)
@@ -351,7 +354,8 @@ def put_hand(id_player: int = Header(..., key='id-player')):
         if player.game.next_card_in_deck() is None:
             sort_discard_pile = player.game.get_discard_pile()
             random.shuffle(sort_discard_pile)
-            player.game.deck = sort_discard_pile
+
+            player.game.deck = json.dumps(sort_discard_pile)
 
         card = player.game.next_card_in_deck()
         player.game.delete_first_card_in_deck()
@@ -380,6 +384,8 @@ def put_hand(id_player: int = Header(..., key='id-player')):
             'next_card_type': next_card_type
         }
     }
+
+
 @router.get('/game/list')
 def get_games_list():
     with db_session:
