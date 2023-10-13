@@ -95,7 +95,7 @@ def play_card(request_body: PlayCardRequest):
         if user.game.status != GameStatus.STARTED.value:
             raise HTTPException(status_code=400, detail=f'Game {user.game.name} is not in progress')
 
-        if not user.game.check_turn(user.id):
+        if not user.game.check_turn(user.my_position):
             raise HTTPException(status_code=400, detail=f'It is not {user.name} turn')
 
         if target_id is not None:

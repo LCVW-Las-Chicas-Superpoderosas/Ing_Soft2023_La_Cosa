@@ -60,15 +60,25 @@ def next_turn(game_data: NextTurnRequest):
             raise HTTPException(status_code=400, detail='Game not found.')
 
         try:
-            game.next_turn()
+            actual_turn = game.next_turn()
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+        player_turn = game.players.filter(my_position=actual_turn)
+
+        if player_turn is None:
+            # This is most not likely to happend... buuut
+            raise HTTPException(status_code=500, detail='InternalError: the ' +
+                'player with next turn is not in this game!. better call saul')
+
+        player_turn = player_turn.first()
 
     return {
         'status_code': 200,
         'detail': f'Next turn for game {game.name} set successfully.',
         'data': {
-            'game_data': game.to_dict(),
+            'actual_turn': actual_turn,
+            'player_id': player_turn.id
         }
     }
 
@@ -213,10 +223,11 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
 class GameStartRequest(BaseModel):
     id_player: int
 
+
 @router.put('/game/start')
 def start_game(game_data: GameStartRequest):
     id_player = game_data.id_player
-    
+
     with db_session:
         # Check if the player exists
         player = _player_exists(id_player)
@@ -243,7 +254,14 @@ def start_game(game_data: GameStartRequest):
                 detail='Game cannot be started.')
 
         # Set turns
-        game.set_turns()
+        actual_turn = game.set_turns()
+
+        player_turn = game.players.filter(my_position=actual_turn)
+
+        if player_turn is None:
+            # This is most not likely to happend... buuut
+            raise HTTPException(status_code=500, detail='InternalError: the ' +
+                'player with next turn is not in this game!. better call saul')
 
         # Give cards to users
         game.give_cards_to_users()
@@ -261,8 +279,8 @@ def start_game(game_data: GameStartRequest):
             'status_code': 200,
             'detail': f'Game {game.name} started successfully.',
             'data': {
-                'turns': game.turns,
-                'player_hands': players_hands
+                'player_hands': players_hands,
+                'player_id': player_turn.first().id
             }
         }
 

@@ -14,6 +14,7 @@ class Player(Models.Entity):
     cards = Set('Card')
     is_alive = Required(bool, default=True)
     infected = Optional(bool, default=False)
+    my_position = Optional(int)
 
     def is_in_game(self, game_id):
         if self.game is None:
