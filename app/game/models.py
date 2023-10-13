@@ -5,7 +5,7 @@ from enum import IntEnum
 
 from model_base import db_session, Models, ModelBase
 from card.models import Card
-from pony.orm import commit, Optional, PrimaryKey, Required, Set
+from pony.orm import Optional, PrimaryKey, Required, Set
 
 
 CARDS_PER_PERSON = 4
@@ -141,8 +141,7 @@ class Game(Models.Entity):
         discard_pile_list.append(new_discarded_card.id)
 
         # List -> Json List
-        discard_pile_helper = json.dumps(discard_pile_list)
-        self.discard_pile = discard_pile_helper
+        self.discard_pile = json.dumps(discard_pile_list)
 
     def get_deck(self):
         # Convert the JSON list into a python list
@@ -159,13 +158,11 @@ class Game(Models.Entity):
         deck_list.append(new_card_in_deck_id)
 
         # Convert the List to JSON List
-        deck_helper = json.dumps(deck_list)
-        self.deck = deck_helper
+        self.deck = json.dumps(deck_list)
 
     def next_card_in_deck(self):
         # JSON list to List and get first card.
-        deck_list = self.get_deck()
-        next_card_id = deck_list[0]
+        next_card_id = self.get_deck()[0]
 
         # Retrieve the card in the set
         next_card = self.cards.select(id=next_card_id).first()
@@ -176,9 +173,9 @@ class Game(Models.Entity):
         # JSON list to List and get first card.
         deck_list = self.get_deck()
         deck_list.pop(0)
+
         # Convert the List to JSON List
-        deck_delete_helper = json.dumps(deck_list)
-        self.deck = deck_delete_helper
+        self.deck = json.dumps(deck_list)
 
     def assign_cards_to_game(self):
 
@@ -193,7 +190,6 @@ class Game(Models.Entity):
                     helper = get_cards[i].number <= amount_of_players
                     if helper:
                         self.cards.add(get_cards[i])
-        commit()
 
     def initial_repartition_of_cards(self):
         # This function makes the initial repartition of cards just as intended
