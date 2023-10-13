@@ -134,7 +134,7 @@ class Game(Models.Entity):
         # JSON list -> Python list
         return json.loads(self.discard_pile) if self.discard_pile else []
 
-    def set_discard_pile(self, new_discarded_card):
+    def add_card_to_discard_pile(self, new_discarded_card):
 
         discard_pile_list = self.get_discard_pile()
 
@@ -148,7 +148,7 @@ class Game(Models.Entity):
         # Convert the JSON list into a python list
         return json.loads(self.deck) if self.deck else []
 
-    def set_deck(self, new_card_in_deck):
+    def add_card_to_deck(self, new_card_in_deck):
         # Get actual list
         deck_list = self.get_deck()
 
@@ -238,4 +238,4 @@ class Game(Models.Entity):
         random.shuffle(initial_deck)
 
         for card in initial_deck:
-            self.set_deck(card)
+            self.add_card_to_deck(card)
