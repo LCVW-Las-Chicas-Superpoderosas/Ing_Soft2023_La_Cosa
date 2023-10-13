@@ -106,7 +106,7 @@ def create_game(game_data: GameRequest):
         'status_code': 200,
         'detail': f'Game {game.name} created successfully.',
         'data': {
-        'game_id': game.id
+            'game_id': game.id
         }
     }
 
@@ -213,10 +213,11 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
 class GameStartRequest(BaseModel):
     id_player: int
 
+
 @router.put('/game/start')
 def start_game(game_data: GameStartRequest):
     id_player = game_data.id_player
-    
+
     with db_session:
         # Check if the player exists
         player = _player_exists(id_player)
