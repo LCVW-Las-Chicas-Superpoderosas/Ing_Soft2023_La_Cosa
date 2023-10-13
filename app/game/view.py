@@ -105,13 +105,13 @@ def create_game(game_data: GameRequest):
 
         game.set_turns()
 
-        return {
-            'status_code': 200,
-            'detail': f'Game {game.name} created successfully.',
-            'data': {
-                'game_id': game.id
-            }
+    return {
+        'status_code': 200,
+        'detail': f'Game {game.name} created successfully.',
+        'data': {
+            'game_id': game.id
         }
+    }
 
 
 class JoinGameRequest(BaseModel):
