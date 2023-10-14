@@ -2,7 +2,7 @@ import random
 from datetime import datetime
 from enum import IntEnum
 
-from model_base import Models, ModelBase
+from model_base import db_session, Models, ModelBase
 from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
 
@@ -30,6 +30,8 @@ class Game(Models.Entity):
     min_players = Required(int)
     max_players = Required(int)
     actual_turn = Optional(int)
+    deck = Optional(str, nullable=True)
+    discard_pile = Optional(str, nullable=True)
 
     def get_turns(self):
         # Convert the JSON list into a python list
@@ -111,3 +113,109 @@ class Game(Models.Entity):
         self.players = []
         self.cards = []
         self.chat = None
+
+    def get_discard_pile(self):
+        # JSON list -> Python list
+        return json.loads(self.discard_pile) if self.discard_pile else []
+
+    def add_card_to_discard_pile(self, new_discarded_card):
+
+        discard_pile_list = self.get_discard_pile()
+
+        discard_pile_list.append(new_discarded_card.id)
+
+        # List -> Json List
+        self.discard_pile = json.dumps(discard_pile_list)
+
+    def get_deck(self):
+        # Convert the JSON list into a python list
+        return json.loads(self.deck) if self.deck else []
+
+    def add_card_to_deck(self, new_card_in_deck):
+        # Get actual list
+        deck_list = self.get_deck()
+
+        # Get id from new_card
+        new_card_in_deck_id = new_card_in_deck.id
+
+        # Insert new element
+        deck_list.append(new_card_in_deck_id)
+
+        # Convert the List to JSON List
+        self.deck = json.dumps(deck_list)
+
+    def next_card_in_deck(self):
+        # JSON list to List and get first card.
+        next_card_id = self.get_deck()[0]
+
+        # Retrieve the card in the set
+        next_card = self.cards.select(id=next_card_id).first()
+
+        return next_card
+
+    def delete_first_card_in_deck(self):
+        # JSON list to List and get first card.
+        deck_list = self.get_deck()
+        deck_list.pop(0)
+
+        # Convert the List to JSON List
+        self.deck = json.dumps(deck_list)
+
+    def assign_cards_to_game(self):
+
+        amount_of_players = len(self.players)
+
+        with db_session:
+            get_cards = Card.select()
+            get_cards = list(get_cards)
+            for i in range(0, len(get_cards)):
+                if get_cards[i].number is not None:
+                    helper = False
+                    helper = get_cards[i].number <= amount_of_players
+                    if helper:
+                        self.cards.add(get_cards[i])
+
+    def initial_repartition_of_cards(self):
+        # This function makes the initial repartition of cards just as intended
+        # in real life
+        self.assign_cards_to_game()
+        all_cards = self.cards
+        the_thing_card = self.cards.select(number=0).first()
+
+        # Reparticion inicial
+        initial_repartition_amount = len(self.players) * 4 - 1
+
+        # Separar n*4-1 cartas
+        initial_deck_shuffle = [card for card in self.cards
+                             if card.type not in
+                             {0, 2, 3}][:initial_repartition_amount]
+
+        # Mezclar
+        random.shuffle(initial_deck_shuffle)
+
+        # Anadir La Cosa a las n*4-1 cartas para hacerlas n*4 cartas.
+        initial_deck_shuffle.append(the_thing_card)
+
+        # Mezclar denuevo
+        random.shuffle(initial_deck_shuffle)
+
+        # Repartir 4 cartas a cada jugador
+        for player in self.players:
+            for i in range(0, 4):
+                player.cards.add(initial_deck_shuffle[0])
+                if initial_deck_shuffle[0].type == 3:
+                    self.the_thing = player.id
+                initial_deck_shuffle.pop(0)
+
+        # Armar el mazo con las cartas restantes
+        # (infectados + sobrantes de tipo 1 Stay Away!)
+        infected_cards = [card for card in self.cards if card.type == 2]
+        left_over_stayaway_cards = [card for card in all_cards
+                             if card not in initial_deck_shuffle and card not in infected_cards and card.type != 0]
+
+        initial_deck = infected_cards + left_over_stayaway_cards
+
+        random.shuffle(initial_deck)
+
+        for card in initial_deck:
+            self.add_card_to_deck(card)

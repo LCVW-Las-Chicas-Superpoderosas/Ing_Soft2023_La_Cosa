@@ -1,9 +1,12 @@
+import json
+import random
+
 from chat.models import Chat
 from fastapi import APIRouter, Header, HTTPException
 from game.models import Game, GameStatus
 from model_base import ModelBase
 from player.models import Player
-from pony.orm import db_session
+from pony.orm import commit, db_session
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -112,13 +115,13 @@ def create_game(game_data: GameRequest):
 
         game.set_turns()
 
-        return {
-            'status_code': 200,
-            'detail': f'Game {game.name} created successfully.',
-            'data': {
-                'game_id': game.id
-            }
+    return {
+        'status_code': 200,
+        'detail': f'Game {game.name} created successfully.',
+        'data': {
+            'game_id': game.id
         }
+    }
 
 
 class JoinGameRequest(BaseModel):
@@ -264,7 +267,7 @@ def start_game(game_data: GameStartRequest):
                 'player with next turn is not in this game!. better call saul')
 
         # Give cards to users
-        game.give_cards_to_users()
+        game.initial_repartition_of_cards()
 
         players_hands = {}
         for player in game.players:
@@ -301,6 +304,102 @@ def delete_game(game_data: GameDeleteRequest):
         'status_code': 200,
         'detail': 'Game deleted successfully.',
         'data': {}
+    }
+
+
+@router.get('/hand')
+def player_hand(id_player: int = Header(..., key='id-player')):
+    with db_session:
+
+        player = MODELBASE.get_first_record_by_value(
+            Player, id=id_player)
+
+        if player.game is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Player {player.name}, id: {player.id} is not in game'
+            )
+
+        if player.game.status == 0:  # 0 = WAITING
+            raise HTTPException(
+                status_code=400,
+                detail=f'The game is not started, cannot get hand of {player.id}'
+            )
+
+        if player.game.status == 2:  # 2 = FINISHED
+            raise HTTPException(
+                status_code=400,
+                detail=f'The game is finished, cannot get hand of {player.id}'
+            )
+
+        hand = [p.card_token for p in player.cards]
+
+    return {
+        'status_code': 200,
+        'message': f'Player {player.name} id:{player.id} hand',
+        'data': {
+            'hand': hand
+        }
+    }
+
+
+@router.put('/hand')
+def put_hand(id_player: int = Header(..., key='id-player')):
+    with db_session:
+
+        player = MODELBASE.get_first_record_by_value(Player, id=id_player)
+
+        if player.game is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Player {player.name}, id: {player.id} is not in game'
+            )
+
+        if player.game.status == 0:  # 0 = WAITING
+            raise HTTPException(
+                status_code=400,
+                detail='The game is not started, cannot get card from deck'
+            )
+
+        if player.game.status == 2:  # 2 = FINISHED
+            raise HTTPException(
+                status_code=400,
+                detail='The game is finished, cannot get card from deck'
+            )
+
+        # Get card from deck
+        if player.game.next_card_in_deck() is None:
+            sort_discard_pile = player.game.get_discard_pile()
+            random.shuffle(sort_discard_pile)
+
+            player.game.deck = json.dumps(sort_discard_pile)
+
+        card = player.game.next_card_in_deck()
+        player.game.delete_first_card_in_deck()
+
+        # Card from deck (Still a list bc Endpoint Contract)
+        picked_cards = []
+        picked_cards.append(card.card_token)
+
+        player.cards.add(card)
+
+        # Get next_card_type
+        if player.game.next_card_in_deck() is None:
+            sort_discard_pile = player.game.get_discard_pile()
+            random.shuffle(sort_discard_pile)
+            player.game.deck = sort_discard_pile
+
+        next_card = player.game.next_card_in_deck()
+        next_card_type = next_card.type
+        commit()
+
+    return {
+        'status_code': 200,
+        'message': f'Succesfully retrieved cards from deck for {player.name},id:{player.id}',
+        'data': {
+            'picked_cards': picked_cards,
+            'next_card_type': next_card_type
+        }
     }
 
 
