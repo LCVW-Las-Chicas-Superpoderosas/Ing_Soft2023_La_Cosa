@@ -255,7 +255,8 @@ def start_game(game_data: GameStartRequest):
         players_hands = {}
         for player in game.players:
             players_hands[player.id] = {
-                'cards': [c.card_token for c in player.cards]
+                'cards': [{'card_token': card.card_token, 'type': card.type}
+                    for card in player.cards]
             }
 
         # Set game status
@@ -315,7 +316,8 @@ def player_hand(id_player: int = Header(..., key='id-player')):
                 detail=f'The game is finished, cannot get hand of {player.id}'
             )
 
-        hand = [p.card_token for p in player.cards]
+        hand = [{'card_token': card.card_token, 'type': card.type}
+            for card in player.cards]
 
     return {
         'status_code': 200,
@@ -362,7 +364,10 @@ def put_hand(id_player: int = Header(..., key='id-player')):
 
         # Card from deck (Still a list bc Endpoint Contract)
         picked_cards = []
-        picked_cards.append(card.card_token)
+        picked_cards.append({
+            'card_token': card.card_token,
+            'type': card.type
+        })
 
         player.cards.add(card)
 
