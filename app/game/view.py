@@ -63,11 +63,11 @@ def next_turn(game_data: NextTurnRequest):
             raise HTTPException(status_code=400, detail='Game not found.')
 
         try:
-            actual_turn = game.next_turn()
+            current_turn = game.next_turn()
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-        player_turn = game.players.filter(my_position=actual_turn)
+        player_turn = game.players.filter(my_position=current_turn)
 
         if player_turn is None:
             # This is most not likely to happend... buuut
@@ -80,7 +80,7 @@ def next_turn(game_data: NextTurnRequest):
         'status_code': 200,
         'detail': f'Next turn for game {game.name} set successfully.',
         'data': {
-            'actual_turn': actual_turn,
+            'current_turn': current_turn,
             'player_id': player_turn.id
         }
     }
@@ -257,9 +257,9 @@ def start_game(game_data: GameStartRequest):
                 detail='Game cannot be started.')
 
         # Set turns
-        actual_turn = game.set_turns()
+        current_turn = game.set_turns()
 
-        player_turn = game.players.filter(my_position=actual_turn)
+        player_turn = game.players.filter(my_position=current_turn)
 
         if player_turn is None:
             # This is most not likely to happend... buuut

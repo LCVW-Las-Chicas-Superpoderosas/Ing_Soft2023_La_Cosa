@@ -1,11 +1,11 @@
-import random
 from datetime import datetime
 from enum import IntEnum
 
 from model_base import db_session, Models, ModelBase
 from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
-
+import json
+import random
 
 CARDS_PER_PERSON = 4
 
@@ -29,13 +29,13 @@ class Game(Models.Entity):
     players = Set('Player')
     min_players = Required(int)
     max_players = Required(int)
-    actual_turn = Optional(int)
+    current_turn = Optional(int)
     deck = Optional(str, nullable=True)
     discard_pile = Optional(str, nullable=True)
 
     def get_turns(self):
         # Convert the JSON list into a python list
-        return self.actual_turn
+        return self.current_turn
 
     def set_turns(self):
         total_players = len(self.players)
@@ -47,12 +47,12 @@ class Game(Models.Entity):
                 continue
             player.my_position = turns.pop(0)
 
-        self.actual_turn = random.randint(0, total_players - 1)
-        return self.actual_turn
+        self.current_turn = random.randint(0, total_players - 1)
+        return self.current_turn
 
     def next_turn(self):
-        self.actual_turn += 1
-        return self.actual_turn
+        self.current_turn += 1
+        return self.current_turn
 
     def check_turn(self, user_position):
         return user_position == self.get_turns()
