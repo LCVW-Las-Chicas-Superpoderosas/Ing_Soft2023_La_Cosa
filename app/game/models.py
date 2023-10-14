@@ -39,8 +39,7 @@ class Game(Models.Entity):
 
     def set_turns(self):
         total_players = len(self.players)
-        turns = [random.randint(0, total_players - 1) for _ in range(
-            total_players)]
+        turns = [i for i in range(total_players)]
 
         for player in self.players:
             if not player.is_alive:
