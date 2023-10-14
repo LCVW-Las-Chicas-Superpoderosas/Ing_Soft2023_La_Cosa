@@ -63,15 +63,25 @@ def next_turn(game_data: NextTurnRequest):
             raise HTTPException(status_code=400, detail='Game not found.')
 
         try:
-            game.next_turn()
+            current_turn = game.next_turn()
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+        player_turn = game.players.filter(my_position=current_turn)
+
+        if player_turn is None:
+            # This is most not likely to happend... buuut
+            raise HTTPException(status_code=500, detail='InternalError: the ' +
+                'player with next turn is not in this game!. better call saul')
+
+        player_turn = player_turn.first()
 
     return {
         'status_code': 200,
         'detail': f'Next turn for game {game.name} set successfully.',
         'data': {
-            'game_data': game.to_dict(),
+            'current_turn': current_turn,
+            'player_id': player_turn.id
         }
     }
 
@@ -247,7 +257,14 @@ def start_game(game_data: GameStartRequest):
                 detail='Game cannot be started.')
 
         # Set turns
-        game.set_turns()
+        current_turn = game.set_turns()
+
+        player_turn = game.players.filter(my_position=current_turn)
+
+        if player_turn is None:
+            # This is most not likely to happend... buuut
+            raise HTTPException(status_code=500, detail='InternalError: the ' +
+                'player with next turn is not in this game!. better call saul')
 
         # Give cards to users
         game.initial_repartition_of_cards()
@@ -266,8 +283,8 @@ def start_game(game_data: GameStartRequest):
             'status_code': 200,
             'detail': f'Game {game.name} started successfully.',
             'data': {
-                'turns': game.turns,
-                'player_hands': players_hands
+                'player_hands': players_hands,
+                'player_id': player_turn.first().id
             }
         }
 

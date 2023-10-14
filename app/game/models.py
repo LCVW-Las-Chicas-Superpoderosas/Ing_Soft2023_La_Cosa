@@ -1,12 +1,11 @@
-import json
-import random
 from datetime import datetime
 from enum import IntEnum
 
 from model_base import db_session, Models, ModelBase
 from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
-
+import json
+import random
 
 CARDS_PER_PERSON = 4
 
@@ -30,48 +29,33 @@ class Game(Models.Entity):
     players = Set('Player')
     min_players = Required(int)
     max_players = Required(int)
-    turns = Optional(str, nullable=True)  # Store turns as a JSON string
+    current_turn = Optional(int)
     deck = Optional(str, nullable=True)
     discard_pile = Optional(str, nullable=True)
 
     def get_turns(self):
         # Convert the JSON list into a python list
-        return json.loads(self.turns) if self.turns else []
+        return self.current_turn
 
     def set_turns(self):
-        turns_list = []
+        total_players = len(self.players)
+        turns = [random.randint(0, total_players - 1) for _ in range(
+            total_players)]
 
         for player in self.players:
-            if not player.is_in_game(self.id):
-                raise ValueError('Player must be in the game.')
-            elif not player.is_alive:
+            if not player.is_alive:
                 continue
-            turns_list.append(player.id)
+            player.my_position = turns.pop(0)
 
-        # Shuffle the list
-        random.shuffle(turns_list)
-
-        # Get host position and put it last
-        host_position = turns_list.index(self.host)
-        turns_list.append(turns_list.pop(host_position))
-
-        # Convert the List to JSON List
-        json_list = json.dumps(turns_list)
-        self.turns = json_list
+        self.current_turn = random.randint(0, total_players - 1)
+        return self.current_turn
 
     def next_turn(self):
-        # The first turn goes to the last position and the second turn goes
-        # first
-        turns_list = self.get_turns()
-        turns_list.append(turns_list.pop(0))
+        self.current_turn += 1
+        return self.current_turn
 
-        # Convert the List to JSON List
-        json_list = json.dumps(turns_list)
-        self.turns = json_list
-
-    def check_turn(self, player_id):
-        turns = self.get_turns()
-        return player_id == turns[0]
+    def check_turn(self, user_position):
+        return user_position == self.get_turns()
 
     def validate_the_thing_win(self):
         # count alive players in the game with a list comprehension

@@ -1,5 +1,3 @@
-import json
-
 from card.models import Card, CardType
 from chat.models import Chat
 from game.models import Game
@@ -15,13 +13,13 @@ def create_data_test():
         card = model_base.add_record(Card, name='create_data_test_card',
             card_token='create_data_test_card', type=CardType.PANIC.value)
         chat = model_base.add_record(Chat)
-        player = model_base.add_record(Player, name='create_data_test', cards=card)
-        player2 = model_base.add_record(Player, name='create_data_test_it', cards=card)
+        player = model_base.add_record(Player, name='create_data_test', cards=card, my_position=0)
+        player2 = model_base.add_record(Player, name='create_data_test_it', cards=card, my_position=1)
         commit()
 
         game = model_base.add_record(Game, name='create_data_test', password='', chats=chat,
             cards=card, players=[player, player2], host=player.id, min_players=4, max_players=8,
-            the_thing=player2.id, turns=json.dumps([player.id, player2.id]), status=1)
+            the_thing=player2.id, current_turn=0, status=1)
         commit()
     except Exception:
         card = model_base.get_first_record_by_value(Card, card_token='create_data_test_card')
