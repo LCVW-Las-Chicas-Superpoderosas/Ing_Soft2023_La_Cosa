@@ -59,6 +59,7 @@ def create_data_full_lobby():
         player2 = model_base.get_first_record_by_value(Player, name='create_data_full_lobby_2')
         player3 = model_base.get_first_record_by_value(Player, name='create_data_full_lobby_3')
         player4 = model_base.get_first_record_by_value(Player, name='create_data_full_lobby_4')
+
     return game.cards, chat, [player1, player2, player3, player4], game
 
 
@@ -220,3 +221,90 @@ def delete_data_full_lobby(cards, chat, players, game):
         model_base.delete_record(cards)
     model_base.delete_record(game)
     model_base.delete_record(chat)
+
+
+def create_data_cards_given():
+    try:
+        card = model_base.add_record(Card, name='create_data_started_game_card',
+            card_token='create_data_started_game_card', type=CardType.PANIC.value)
+        card1 = model_base.add_record(Card, name='La Cosa', card_token='img1.png', type=CardType.IT.value)
+        card2 = model_base.add_record(Card, name='Atras', card_token='img13.png', type=CardType.STAY_AWAY.value)
+        card3 = model_base.add_record(Card, name='Juan', card_token='img12.png', type=CardType.STAY_AWAY.value)
+        chat = model_base.add_record(Chat)
+
+        player1 = model_base.add_record(Player, name='create_data_started_game_1', cards={card, card1, card2, card3})
+        player2 = model_base.add_record(Player, name='create_data_started_game_2', cards={card, card1, card2, card3})
+        player3 = model_base.add_record(Player, name='create_data_started_game_3', cards={card, card1, card2, card3})
+        player4 = model_base.add_record(Player, name='create_data_started_game_4', cards={card, card1, card2, card3})
+        commit()
+
+        game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
+            cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
+            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[229, 230, 231, 232]')
+
+        commit()
+    except Exception:
+        game = model_base.get_first_record_by_value(Game, name='create_data_started_game')
+        chat = model_base.get_first_record_by_value(Chat)
+        player1 = model_base.get_first_record_by_value(Player, name='create_data_started_game_1')
+        player2 = model_base.get_first_record_by_value(Player, name='create_data_started_game_2')
+        player3 = model_base.get_first_record_by_value(Player, name='create_data_started_game_3')
+        player4 = model_base.get_first_record_by_value(Player, name='create_data_started_game_4')
+        card = model_base.get_first_record_by_value(Card, card_token='create_data_started_game_card')
+
+    return [card, card1, card2, card3], chat, [player1, player2, player3, player4], game
+
+
+def create_data_cards_given2():
+    try:
+        card = model_base.add_record(Card, name='create_data_started_game_card',
+        card_token='create_data_started_game_card', type=CardType.PANIC.value)
+        card1 = model_base.add_record(Card, name='La Cosa', card_token='img1.png', type=CardType.IT.value)
+        card2 = model_base.add_record(Card, name='Atras', card_token='img13.png', type=CardType.STAY_AWAY.value)
+        card3 = model_base.add_record(Card, name='Juan', card_token='img12.png', type=CardType.STAY_AWAY.value)
+        chat = model_base.add_record(Chat)
+
+        player1 = model_base.add_record(Player, name='create_data_started_game_1', cards={card, card1, card2, card3})
+        player2 = model_base.add_record(Player, name='create_data_started_game_2', cards={card, card1, card2, card3})
+        player3 = model_base.add_record(Player, name='create_data_started_game_3', cards={card, card1, card2, card3})
+        player4 = model_base.add_record(Player, name='create_data_started_game_4', cards={card, card1, card2, card3})
+        commit()
+
+        game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
+            cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
+            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[221, 222, 223, 224]')
+
+        commit()
+    except Exception:
+        game = model_base.get_first_record_by_value(Game, name='create_data_started_game')
+        chat = model_base.get_first_record_by_value(Chat)
+        player1 = model_base.get_first_record_by_value(Player, name='create_data_started_game_1')
+        player2 = model_base.get_first_record_by_value(Player, name='create_data_started_game_2')
+        player3 = model_base.get_first_record_by_value(Player, name='create_data_started_game_3')
+        player4 = model_base.get_first_record_by_value(Player, name='create_data_started_game_4')
+        card = model_base.get_first_record_by_value(Card, card_token='create_data_started_game_card')
+
+    return [card, card1, card2, card3], chat, [player1, player2, player3, player4], game
+
+
+def create_data_cards_given3():
+
+    card = model_base.add_record(Card, name='create_data_started_game_card',
+    card_token='create_data_started_game_card1', type=CardType.PANIC.value)
+    card1 = model_base.add_record(Card, name='La Cosa', card_token='img1.png', type=CardType.IT.value)
+    card2 = model_base.add_record(Card, name='Atras', card_token='img13.png', type=CardType.STAY_AWAY.value)
+    card3 = model_base.add_record(Card, name='Juan', card_token='img12.png', type=CardType.STAY_AWAY.value)
+    chat = model_base.add_record(Chat)
+
+    player1 = model_base.add_record(Player, name='create_data_started_game_1', cards={card, card1, card2, card3})
+    player2 = model_base.add_record(Player, name='create_data_started_game_2', cards={card, card1, card2, card3})
+    player3 = model_base.add_record(Player, name='create_data_started_game_3', cards={card, card1, card2, card3})
+    player4 = model_base.add_record(Player, name='create_data_started_game_4', cards={card, card1, card2, card3})
+    commit()
+
+    game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
+        cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
+        the_thing=player2.id, min_players=4, max_players=4, status=0, deck='[229, 230, 231, 232]')
+    commit()
+
+    return [card, card1, card2, card3], chat, [player1, player2, player3, player4], game
