@@ -6,7 +6,6 @@ from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
 import json
 import random
-import logging
 
 CARDS_PER_PERSON = 4
 
@@ -178,7 +177,6 @@ class Game(Models.Entity):
     def initial_repartition_of_cards(self):
         # This function makes the initial repartition of cards just as intended
         # in real life
-        logging.basicConfig(filename='server.log', level=logging.DEBUG)
         self.assign_cards_to_game()
         all_cards = self.cards
         the_thing_card = self.cards.select(number=0).first()
@@ -220,5 +218,3 @@ class Game(Models.Entity):
 
         for card in initial_deck:
             self.add_card_to_deck(card)
-            logging.debug(f'game.deck = {self.deck}')
-            logging.debug(f'initial_deck = {initial_deck}')
