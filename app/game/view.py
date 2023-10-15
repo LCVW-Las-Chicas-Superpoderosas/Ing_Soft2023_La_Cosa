@@ -267,14 +267,14 @@ def start_game(game_data: GameStartRequest):
                 'player with next turn is not in this game!. better call saul')
 
         # Give cards to users
-        game.initial_repartition_of_cards()
-
-        players_hands = {}
-        for player in game.players:
-            players_hands[player.id] = {
-                'cards': [{'card_token': card.card_token, 'type': card.type}
-                    for card in player.cards]
-            }
+        # game.initial_repartition_of_cards()
+        # 
+        # players_hands = {}
+        # for player in game.players:
+        #     players_hands[player.id] = {
+        #         'cards': [{'card_token': card.card_token, 'type': card.type}
+        #             for card in player.cards]
+        #     }
 
         # Set game status
         game.status = GameStatus.STARTED.value
@@ -283,7 +283,7 @@ def start_game(game_data: GameStartRequest):
             'status_code': 200,
             'detail': f'Game {game.name} started successfully.',
             'data': {
-                'player_hands': players_hands,
+                'player_hands': [],
                 'player_id': player_turn.first().id
             }
         }
@@ -429,3 +429,57 @@ def get_games_list():
             'detail': 'Joinable games list.',
             'data': games_list
         }
+
+
+@router.get('/game')
+def get_game_info(id_player: int = Header(..., key='id-player')):
+
+    with db_session:
+        # Check if the player exists
+        player = _player_exists(id_player)
+
+        # Get the game
+        game = player.game
+
+        # If player is not part of a game, return error
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Player is not part of a game.')
+
+        # Check if game is waiting for players
+        # if it is, return error
+        if game.status == GameStatus.WAITING.value:
+            raise HTTPException(
+                status_code=400,
+                detail='Game is waiting for players. Cannot get game info.')
+
+        # Get players, return a list of dicts that contain the player:
+        # name, id, position, is_alive
+        players = []
+
+        for player in game.players:
+            players.append({
+                'name': player.name,
+                'id': player.id,
+                'position': player.my_position,
+                'is_alive': player.is_alive
+            })
+
+        # Get the current turn player id
+        current_player = game.players.filter(
+            my_position=game.current_turn).first().id
+
+        # Get the game status
+        game_status = game.status
+        
+        return {
+            'status_code': 200,
+            'detail': f'{game.name} information.',
+            'data': {
+                'game_status': game_status,
+                'players': players,
+                'current_player': current_player
+            }
+        }
+        

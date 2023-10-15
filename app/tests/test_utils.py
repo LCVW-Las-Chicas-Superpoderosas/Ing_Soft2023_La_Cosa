@@ -306,3 +306,29 @@ def create_data_cards_given3():
     commit()
 
     return [card, card1, card2, card3], chat, [player1, player2, player3, player4], game
+
+
+def create_data_started_game_set_positions():
+    try:
+        card = model_base.add_record(Card, name='create_data_started_game_set_positions',
+            card_token='create_data_started_game_set_positions', type=CardType.PANIC.value)
+        chat = model_base.add_record(Chat)
+        player1 = model_base.add_record(Player, name='create_data_started_game_set_positions_1', cards=card, my_position=0)
+        player2 = model_base.add_record(Player, name='create_data_started_game_set_positions_2', cards=card, my_position=1)
+        player3 = model_base.add_record(Player, name='create_data_started_game_set_positions_3', cards=card, my_position=2)
+        player4 = model_base.add_record(Player, name='create_data_started_game_set_positions_4', cards=card, my_position=3)
+        commit()
+
+        game = model_base.add_record(Game, name='create_data_started_game_set_positions', password='', chats=chat,
+            cards=card, players=[player1, player2, player3, player4], host=player1.id, min_players=4, max_players=4,
+            the_thing=player2.id, current_turn=0, status=1)
+        commit()
+    except Exception:
+        card = model_base.get_first_record_by_value(Card, card_token='create_data_started_game_set_positions')
+        chat = model_base.get_first_record_by_value(Chat)
+        player1 = model_base.get_first_record_by_value(Player, name='create_data_started_game_set_positions_1')
+        player2 = model_base.get_first_record_by_value(Player, name='create_data_started_game_set_positions_2')
+        player3 = model_base.get_first_record_by_value(Player, name='create_data_started_game_set_positions_3')
+        player4 = model_base.get_first_record_by_value(Player, name='create_data_started_game_set_positions_4')
+        game = model_base.get_first_record_by_value(Game, name='create_data_started_game_set_positions')
+    return card, chat, [player1, player2, player3, player4], game

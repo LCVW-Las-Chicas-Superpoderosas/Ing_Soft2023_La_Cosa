@@ -12,6 +12,7 @@ from tests.test_utils import (create_data_full_lobby,
     create_data_incomplete_lobby, create_data_started_game,
     create_data_test, create_data_cards_given,
     create_data_cards_given2, create_data_cards_given3,
+    create_data_started_game_set_positions,
     delete_data_full_lobby)
 
 
@@ -510,3 +511,50 @@ class TestListGames(unittest.TestCase):
             self.assertEqual(response.json()['detail'],
                              'Joinable games list.')
             self.assertEqual(len(response.json()['data']), 0)
+
+
+class TestGetGameInfo(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_get_valid_game_info(self):
+        with db_session:
+            # Create started game with positions set
+            card, chat, players, game = create_data_started_game_set_positions()
+
+            headers = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.request('GET', '/game/', headers=headers)
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['detail'],
+                             'create_data_started_game_set_positions information.')
+            # get the players and sort them by id
+            players = response.json()['data']['players'] 
+            players.sort(key=lambda x: x['id'])
+            self.assertEqual(players[0]['position'], 0)
+            self.assertEqual(players[1]['position'], 1)
+            self.assertEqual(players[2]['position'], 2)
+            self.assertEqual(players[3]['position'], 3)
+            self.assertEqual(response.json()['data']['current_player'], players[0]['id'])
+    
+    def test_get_game_info_not_started(self):
+        with db_session:
+            # Create started game with positions set
+            card, chat, players, game = create_data_full_lobby()
+
+            headers = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.request('GET', '/game/', headers=headers)
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()['detail'],
+                             'Game is waiting for players. Cannot get game info.')
