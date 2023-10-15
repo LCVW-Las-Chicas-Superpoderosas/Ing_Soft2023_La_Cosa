@@ -42,7 +42,7 @@ def populate_db_test():
     # add set of players to game
     model_base.add_record(
         Game, name='Bahamas', players=[player1, player2, player3, player4],
-        chats=chat, cards=model_base.get_records_by_value(Card),
+        chats=chat, cards={},
         min_players=4, max_players=4, host=1)
 
 

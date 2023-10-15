@@ -427,7 +427,8 @@ class TestInitialRepartitionGame(unittest.TestCase):
             delete_data_full_lobby(card, chat, players, game)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()['data']['picked_cards'], ['create_data_started_game_card'])
+            self.assertEqual(response.json()['data']['picked_cards'],
+                             [{'card_token': 'create_data_started_game_card', 'type': 0}])
             self.assertEqual(response.json()['data']['next_card_type'], 3)
 
     def test_get_hand(self):
