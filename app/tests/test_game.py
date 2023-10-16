@@ -543,7 +543,7 @@ class TestGetGameInfo(unittest.TestCase):
             self.assertEqual(players[2]['position'], 2)
             self.assertEqual(players[3]['position'], 3)
             self.assertEqual(response.json()['data']['current_player'], players[0]['id'])
-    
+
     def test_get_game_info_not_started(self):
         with db_session:
             # Create started game with positions set
@@ -559,3 +559,68 @@ class TestGetGameInfo(unittest.TestCase):
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.json()['detail'],
                              'Game is waiting for players. Cannot get game info.')
+
+
+class TestDiscardPile(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # Create and initialize the database
+        initialize_database()
+
+    def test_discard_card_player(self):
+        with db_session:
+            # Create started game with positions set
+            card, chat, players, game = create_data_test()
+            player_id = players[0].id
+            player_name = players[0].name
+            data = {
+                'id_player': player_id,
+                'card_token': card.card_token
+            }
+
+            response = client.post('/game/discard_card', json=data)
+            delete_data_full_lobby(card, chat, players, game)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()['message'],
+            f'Player {player_name} id:{player_id} discard card sucessfully')
+
+    def test_discard_card_player_not_started_game(self):
+        with db_session:
+            # Create started game with positions set
+            card, chat, players, game = create_data_test()
+            game.status = 0
+            commit()
+            data = {
+                'id_player': players[0].id,
+                'card_token': card.card_token
+            }
+
+            response = client.post('/game/discard_card', json=data)
+            delete_data_full_lobby(card, chat, players, game)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()['detail'],
+            'Game is not started.')
+
+    def test_discard_card_player_not_in_game(self):
+        with db_session:
+            # Create started game with positions set
+            card, chat, players, game = create_data_test()
+            players[0].game = None
+            player_id = players[0].id
+            commit()
+            data = {
+                'id_player': players[0].id,
+                'card_token': card.card_token
+            }
+
+            response = client.post('/game/discard_card', json=data)
+            delete_data_full_lobby(card, chat, players, game)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()['detail'],
+            f'player({player_id}) is not playing any game...')

@@ -35,3 +35,11 @@ class Player(Models.Entity):
         if self.cards is not None:
             card = self.cards.get(type=CardType.IT)
         return True if card else False
+
+    def remove_card(self, card_id):
+        card = self.cards.select().filter(id=card_id).first()
+        card.delete()
+
+    def check_card_in_hand(self, card_id):
+        card = self.cards.select().filter(id=card_id).first()
+        return card is not None

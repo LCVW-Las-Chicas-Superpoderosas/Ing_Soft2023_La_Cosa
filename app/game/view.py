@@ -1,6 +1,7 @@
 import json
 import random
 
+from card.models import Card
 from chat.models import Chat
 from fastapi import APIRouter, Header, HTTPException
 from game.models import Game, GameStatus
@@ -26,6 +27,24 @@ class GameRequest(BaseModel):
 class NextTurnRequest(BaseModel):
     # Modeling the request body
     game_id: int
+
+
+class JoinGameRequest(BaseModel):
+    id_game: int
+    id_player: int
+
+
+class GameStartRequest(BaseModel):
+    id_player: int
+
+
+class GameDeleteRequest(BaseModel):
+    id_game: int
+
+
+class DiscardCardRequest(BaseModel):
+    id_player: int
+    card_token: str
 
 
 def _validate_game_creation_data(game_data: GameRequest):
@@ -124,11 +143,6 @@ def create_game(game_data: GameRequest):
     }
 
 
-class JoinGameRequest(BaseModel):
-    id_game: int
-    id_player: int
-
-
 def _is_game_joinable(game: Game):
     # Check game status
     if game.status != GameStatus.WAITING.value:
@@ -223,10 +237,6 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
         }
 
 
-class GameStartRequest(BaseModel):
-    id_player: int
-
-
 @router.put('/game/start')
 def start_game(game_data: GameStartRequest):
     id_player = game_data.id_player
@@ -268,7 +278,7 @@ def start_game(game_data: GameStartRequest):
 
         # Give cards to users
         # game.initial_repartition_of_cards()
-        # 
+        #
         # players_hands = {}
         # for player in game.players:
         #     players_hands[player.id] = {
@@ -278,6 +288,7 @@ def start_game(game_data: GameStartRequest):
 
         # Set game status
         game.status = GameStatus.STARTED.value
+
         # Return OK
         return {
             'status_code': 200,
@@ -287,10 +298,6 @@ def start_game(game_data: GameStartRequest):
                 'player_id': player_turn.first().id
             }
         }
-
-
-class GameDeleteRequest(BaseModel):
-    id_game: int
 
 
 @router.delete('/game')
@@ -472,7 +479,7 @@ def get_game_info(id_player: int = Header(..., key='id-player')):
 
         # Get the game status
         game_status = game.status
-        
+
         return {
             'status_code': 200,
             'detail': f'{game.name} information.',
@@ -482,4 +489,56 @@ def get_game_info(id_player: int = Header(..., key='id-player')):
                 'current_player': current_player
             }
         }
-        
+
+
+@router.post('/game/discard_card')
+def discard_card(data: DiscardCardRequest):
+    player_id = data.id_player
+    card_token = data.card_token
+
+    with db_session:
+        # Check if the player exists
+        player = _player_exists(player_id)
+
+        card_id = MODELBASE.get_first_record_by_value(
+            Card, card_token=card_token).id
+
+        if not player.check_card_in_hand(card_id):
+            raise HTTPException(
+                status_code=400,
+                detail=f'Card with {card_id} not in player({player_id}) hand.'
+            )
+
+        game = player.game
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f'player({player_id}) is not playing any game...'
+            )
+
+        if game.status != GameStatus.STARTED.value:
+            raise HTTPException(
+                status_code=400,
+                detail='Game is not started.')
+
+        game.add_card_to_discard_pile(card_id)
+
+        try:
+            player.remove_card(card_id)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=str(e)
+            )
+
+        hand = [{
+            'card_token': card.card_token,
+            'type': card.type} for card in player.cards]
+
+    return {
+        'status_code': 200,
+        'message':
+            f'Player {player.name} id:{player.id} ' +
+            'discard card sucessfully',
+        'data': {'hand': hand}
+    }
