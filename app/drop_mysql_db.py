@@ -4,7 +4,7 @@ from constants import DATABASE_URL, DATABASE_NAME, MYSQL_USER, MYSQL_PASS
 
 def drop_database():
     try:
-        # Connect to MySQL server (assumes root user with no password)
+        # Connect to MySQL server
         connection = mysql.connector.connect(
             host=DATABASE_URL,
             user=MYSQL_USER,
@@ -13,14 +13,14 @@ def drop_database():
         # Create a cursor object to execute SQL commands
         cursor = connection.cursor()
 
-        # Create the database if it doesn't exist
+        # Drop Database
         cursor.execute(f'DROP DATABASE {DATABASE_NAME}')
 
         # Close the cursor and the connection
         cursor.close()
         connection.close()
     except Exception as e:
-        raise Exception(f'Error droping MySQL database: {e}')
+        raise Exception(f'Error dropping MySQL database: {e}')
 
 
 if __name__ == '__main__':
