@@ -117,11 +117,10 @@ class Game(Models.Entity):
         # JSON list -> Python list
         return json.loads(self.discard_pile) if self.discard_pile else []
 
-    def add_card_to_discard_pile(self, new_discarded_card):
-
+    def add_card_to_discard_pile(self, new_discarded_card_id):
         discard_pile_list = self.get_discard_pile()
 
-        discard_pile_list.append(new_discarded_card.id)
+        discard_pile_list.append(new_discarded_card_id)
 
         # List -> Json List
         self.discard_pile = json.dumps(discard_pile_list)
@@ -185,9 +184,10 @@ class Game(Models.Entity):
         initial_repartition_amount = len(self.players) * 4 - 1
 
         # Separar n*4-1 cartas
-        initial_deck_shuffle = [card for card in self.cards
-                             if card.type not in
-                             {0, 2, 3}][:initial_repartition_amount]
+        initial_deck_shuffle = [
+            card for card in self.cards
+            if card.type not in {0, 2, 3}
+        ][:initial_repartition_amount]
 
         # Mezclar
         random.shuffle(initial_deck_shuffle)
@@ -209,8 +209,11 @@ class Game(Models.Entity):
         # Armar el mazo con las cartas restantes
         # (infectados + sobrantes de tipo 1 Stay Away!)
         infected_cards = [card for card in self.cards if card.type == 2]
-        left_over_stayaway_cards = [card for card in all_cards
-                             if card not in initial_deck_shuffle and card not in infected_cards and card.type != 0]
+        left_over_stayaway_cards = [
+            card for card in all_cards
+            if card not in (initial_deck_shuffle | infected_cards)
+            and card.type != 0
+        ]
 
         initial_deck = infected_cards + left_over_stayaway_cards
 
