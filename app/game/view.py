@@ -277,14 +277,14 @@ def start_game(game_data: GameStartRequest):
                 'player with next turn is not in this game!. better call saul')
 
         # Give cards to users
-        # game.initial_repartition_of_cards()
-        #
-        # players_hands = {}
-        # for player in game.players:
-        #     players_hands[player.id] = {
-        #         'cards': [{'card_token': card.card_token, 'type': card.type}
-        #             for card in player.cards]
-        #     }
+        game.initial_repartition_of_cards()
+        
+        players_hands = {}
+        for player in game.players:
+            players_hands[player.id] = {
+                'cards': [{'card_token': card.card_token, 'type': card.type}
+                    for card in player.cards]
+            }
 
         # Set game status
         game.status = GameStatus.STARTED.value
@@ -294,9 +294,9 @@ def start_game(game_data: GameStartRequest):
             'status_code': 200,
             'detail': f'Game {game.name} started successfully.',
             'data': {
-                'player_hands': [],
+                'player_hands': players_hands,
                 'player_id': player_turn.first().id
-            }
+            },
         }
 
 

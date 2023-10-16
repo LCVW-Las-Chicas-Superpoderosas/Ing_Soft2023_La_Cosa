@@ -228,7 +228,7 @@ class Game(Models.Entity):
         infected_cards = [card for card in self.cards if card.type == 2]
         left_over_stayaway_cards = [
             card for card in all_cards
-            if card not in (initial_deck_shuffle | infected_cards)
+            if card not in (initial_deck_shuffle or infected_cards)
             and card.type != 0
         ]
 
