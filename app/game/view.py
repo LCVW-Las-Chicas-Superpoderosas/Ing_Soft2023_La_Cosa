@@ -278,7 +278,7 @@ def start_game(game_data: GameStartRequest):
 
         # Give cards to users
         # game.initial_repartition_of_cards()
-        # 
+        #
         # players_hands = {}
         # for player in game.players:
         #     players_hands[player.id] = {
@@ -288,6 +288,7 @@ def start_game(game_data: GameStartRequest):
 
         # Set game status
         game.status = GameStatus.STARTED.value
+
         # Return OK
         return {
             'status_code': 200,
@@ -496,14 +497,13 @@ def discard_card(data: DiscardCardRequest):
     card_token = data.card_token
 
     with db_session:
-        breakpoint()
         # Check if the player exists
         player = _player_exists(player_id)
 
         card_id = MODELBASE.get_first_record_by_value(
             Card, card_token=card_token).id
 
-        if not player.check_card(card_id):
+        if not player.check_card_in_hand(card_id):
             raise HTTPException(
                 status_code=400,
                 detail=f'Card with {card_id} not in player({player_id}) hand.'
@@ -533,8 +533,7 @@ def discard_card(data: DiscardCardRequest):
 
         hand = [{
             'card_token': card.card_token,
-            'type': card.type
-            } for card in player.cards]
+            'type': card.type} for card in player.cards]
 
     return {
         'status_code': 200,
