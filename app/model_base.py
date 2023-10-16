@@ -1,4 +1,4 @@
-from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER
+from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER, DATABASE_NAME
 from pony.orm import Database, db_session, select
 
 Models = Database(
@@ -6,7 +6,7 @@ Models = Database(
     host=DATABASE_URL,
     user=MYSQL_USER,
     passwd=MYSQL_PASS,
-    db='ing_2023'
+    db=DATABASE_NAME
 )
 
 

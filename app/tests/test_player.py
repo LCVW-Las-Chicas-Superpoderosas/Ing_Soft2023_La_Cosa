@@ -1,3 +1,4 @@
+from constants import DATABASE_NAME
 from create_mysql_db import create_database
 from fastapi.testclient import TestClient
 from main import app
@@ -14,7 +15,7 @@ class TestRegisterEndpoint(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create and initialize the database
-        create_database('ing_2023')
+        create_database(DATABASE_NAME)
         initialize_database()
 
     def setUp(self):

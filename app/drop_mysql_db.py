@@ -1,8 +1,8 @@
 import mysql.connector
-from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER, DATABASE_NAME
+from constants import DATABASE_URL, DATABASE_NAME, MYSQL_USER, MYSQL_PASS
 
 
-def create_database(database):
+def drop_database():
     try:
         # Connect to MySQL server (assumes root user with no password)
         connection = mysql.connector.connect(
@@ -14,14 +14,14 @@ def create_database(database):
         cursor = connection.cursor()
 
         # Create the database if it doesn't exist
-        cursor.execute(f'CREATE DATABASE IF NOT EXISTS {database}')
+        cursor.execute(f'DROP DATABASE {DATABASE_NAME}')
 
         # Close the cursor and the connection
         cursor.close()
         connection.close()
     except Exception as e:
-        raise Exception(f'Error creating MySQL database: {e}')
+        raise Exception(f'Error droping MySQL database: {e}')
 
 
 if __name__ == '__main__':
-    create_database(DATABASE_NAME)
+    drop_database()
