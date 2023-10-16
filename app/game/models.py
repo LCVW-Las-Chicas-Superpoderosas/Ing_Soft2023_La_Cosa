@@ -32,6 +32,8 @@ class Game(Models.Entity):
     current_turn = Optional(int)
     deck = Optional(str, nullable=True)
     discard_pile = Optional(str, nullable=True)
+    clockwise = Required(bool, default=True)
+
 
     def get_turns(self):
         # Convert the JSON list into a python list
@@ -50,7 +52,22 @@ class Game(Models.Entity):
         return self.current_turn
 
     def next_turn(self):
-        self.current_turn += 1
+        
+        # by default the turns are "clockwise"
+        # the positions in the table increase clockwise and decrease counter-clockwise
+        if self.clockwise:
+            # if current_turn is the last player, then next turn is the first player
+            if self.current_turn == len(self.players) - 1:
+                self.current_turn = 0
+            else:
+                self.current_turn += 1
+        else:
+            # if current_turn is the first player, then next turn is the last player
+            if self.current_turn == 0:
+                self.current_turn = len(self.players) - 1
+            else:
+                self.current_turn -= 1
+
         return self.current_turn
 
     def check_turn(self, user_position):
