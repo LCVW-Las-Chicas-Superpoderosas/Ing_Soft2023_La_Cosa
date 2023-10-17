@@ -20,14 +20,16 @@ class PlayCardRequest(BaseModel):
     target_id: int = None  # Default value is None
 
 
-def _targeted_effect(target_user, card, user):
+# make target_user optional and None by default
+def _apply_effect(user, card, target_user = None):
     # Check if the card is in the user's hand
     if card not in user.cards:
         raise HTTPException(status_code=400, detail=f"Card {card.name} is not in the user's hand")
 
     # Check that the users are in the same game:
-    if user.game != target_user.game:
-        raise HTTPException(status_code=400, detail='Users are not in the same game')
+    if target_user is not None:
+        if user.game != target_user.game:
+            raise HTTPException(status_code=400, detail='Users are not in the same game')
 
     # Get the game that contains the players
     game = MODEL_BASE.get_first_record_by_value(Game, id=user.game.id)
@@ -45,7 +47,12 @@ def _targeted_effect(target_user, card, user):
 
     if effect is None:
         raise HTTPException(status_code=400, detail=f'Card {card.name} effect not found')
-    effect_status = effect(target_user.id)
+   
+    # If the effect is not specific to a target user, apply it to the user who played the card
+    if target_user is None:
+        effect_status = effect(user.id)
+    else:
+        effect_status = effect(target_user.id)
 
     if effect_status is False:
         raise HTTPException(status_code=400, detail=f'Card {card.name} effect failed')
@@ -104,4 +111,7 @@ def play_card(request_body: PlayCardRequest):
             if target_user is None:
                 raise HTTPException(status_code=400, detail='Target user not found')
 
-            return _targeted_effect(target_user, card, user)
+            return _apply_effect(user, card, target_user)
+
+        else:
+            return _apply_effect(user, card)
