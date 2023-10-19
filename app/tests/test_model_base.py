@@ -1,5 +1,5 @@
 import unittest
-from constants import DATABASE_NAME
+import os
 from model_base import ModelBase, initialize_database
 from create_mysql_db import create_database
 from player.models import Player
@@ -10,7 +10,7 @@ class TestModelBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create and initialize the database
-        create_database(DATABASE_NAME)
+        create_database(os.environ['DATABASE_NAME_LC'])
         initialize_database()
 
     def setUp(self):

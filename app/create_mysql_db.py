@@ -1,5 +1,6 @@
 import mysql.connector
-from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER, DATABASE_NAME
+from constants import DATABASE_URL, MYSQL_PASS, MYSQL_USER
+import os
 
 
 def create_database(database):
@@ -24,4 +25,4 @@ def create_database(database):
 
 
 if __name__ == '__main__':
-    create_database(DATABASE_NAME)
+    create_database(os.environ['DATABASE_NAME_LC'])
