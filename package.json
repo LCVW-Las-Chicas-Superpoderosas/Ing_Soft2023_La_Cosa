@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "test": "export DATABASE_NAME_LC='ing_2023_test' && python ./app/create_mysql_db.py && python ./app/test_initializer.py &&pytest ./app/tests && python ./app/drop_mysql_db.py",
-    "start-server": "export DATABASE_NAME_LC='ing_2023' && app/constants.py && python ./app/create_mysql_db.py && python ./app/main.py"
+    "start-server": "export DATABASE_NAME_LC='ing_2023' && python ./app/create_mysql_db.py && python ./app/main.py"
   },
   "author": "Las Chicas Super Poderosas"
 }
