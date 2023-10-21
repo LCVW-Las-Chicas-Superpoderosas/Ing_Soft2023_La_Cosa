@@ -30,7 +30,38 @@ def watch_your_back(player_id):
         print(e)
         return False
 
+
+def swap_places(target_id):
+    try:
+        with db_session:
+
+            #get target and player who played the card to swap
+            target = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
+            player_turn = game.current_turn
+            player = MODEL_BASE.get_first_record_by_value(Player, my_position=player_turn)
+
+            #get game
+            game = target.game
+
+            #swap
+            target_position = target.my_position
+            target.my_position = player.my_position
+            player.my_position = target_position
+
+            # set the current_turn to the player that played the car
+            # so it can finish the turn
+            game.current_turn = player.my_position
+
+            target.flush()
+            player.flush()
+            game.flush()
+            return True
+    except Exception as e:
+        print(e)
+        return False
+
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
-    'vigila tus espaldas': watch_your_back
+    'vigila tus espaldas': watch_your_back,
+    'cambio de lugar!': swap_places
 }
