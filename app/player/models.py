@@ -21,6 +21,9 @@ class Player(Models.Entity):
             return False
         return game_id == self.game.id
 
+    def leave_game(self):
+        self.game = None
+
     def add_cards(self, cards):
         self.cards = cards
 

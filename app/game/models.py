@@ -34,7 +34,6 @@ class Game(Models.Entity):
     discard_pile = Optional(str, nullable=True)
     clockwise = Required(bool, default=True)
 
-
     def get_turns(self):
         # Convert the JSON list into a python list
         return self.current_turn
@@ -52,7 +51,6 @@ class Game(Models.Entity):
         return self.current_turn
 
     def next_turn(self):
-        
         # by default the turns are "clockwise"
         # the positions in the table increase clockwise and decrease counter-clockwise
         if self.clockwise:
@@ -129,6 +127,7 @@ class Game(Models.Entity):
         self.players = []
         self.cards = []
         self.chat = None
+        self.status = GameStatus.FINISHED.value
 
     def get_discard_pile(self):
         # JSON list -> Python list
@@ -227,9 +226,9 @@ class Game(Models.Entity):
         # (infectados + sobrantes de tipo 1 Stay Away!)
         infected_cards = [card for card in self.cards if card.type == 2]
         left_over_stayaway_cards = [
-            card for card in all_cards
-            if card not in (initial_deck_shuffle or infected_cards)
-            and card.type != 0
+            card for card in all_cards if
+            card not in (initial_deck_shuffle or infected_cards) and
+            card.type != 0
         ]
 
         initial_deck = infected_cards + left_over_stayaway_cards
