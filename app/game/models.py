@@ -33,6 +33,8 @@ class Game(Models.Entity):
     deck = Optional(str, nullable=True)
     discard_pile = Optional(str, nullable=True)
     clockwise = Required(bool, default=True)
+    swap_next_turn = Optional(int)
+    swap_ocurred = Required(bool, default=False)
 
 
     def get_turns(self):
@@ -52,6 +54,12 @@ class Game(Models.Entity):
         return self.current_turn
 
     def next_turn(self):
+        
+        # If the card "Cambio de lugar!" was played, this sets the next turn correctly
+        if self.swap_places_event:
+            self.swap_places_event = False
+            self.current_turn = self.swap_next_turn
+            return self.current_turn
         
         # by default the turns are "clockwise"
         # the positions in the table increase clockwise and decrease counter-clockwise
