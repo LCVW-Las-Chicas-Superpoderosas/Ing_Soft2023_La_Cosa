@@ -238,7 +238,7 @@ def create_data_cards_given():
 
         game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
             cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
-            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[229, 230, 231, 232]')
+            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[277, 278, 279, 280]')
 
         commit()
     except Exception:
@@ -270,7 +270,7 @@ def create_data_cards_given2():
 
         game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
             cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
-            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[221, 222, 223, 224]')
+            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[269, 270, 271, 272]')
 
         commit()
     except Exception:
@@ -302,7 +302,7 @@ def create_data_cards_given3():
 
     game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
         cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
-        the_thing=player2.id, min_players=4, max_players=4, status=0, deck='[229, 230, 231, 232]')
+        the_thing=player2.id, min_players=4, max_players=4, status=0, deck='[273, 274, 275, 276]')
     commit()
 
     return [card, card1, card2, card3], chat, [player1, player2, player3, player4], game
