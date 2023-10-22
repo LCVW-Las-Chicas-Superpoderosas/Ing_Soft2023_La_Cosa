@@ -35,15 +35,17 @@ def swap_places(target_id):
     try:
         with db_session:
 
-            #get target and player who played the card to swap
+            # get target
             target = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
+
+            # get game
+            game = target.game
+
+            # get player who played the swap
             player_turn = game.current_turn
             player = MODEL_BASE.get_first_record_by_value(Player, my_position=player_turn)
 
-            #get game
-            game = target.game
-
-            #swap
+            # swap
             target_position = target.my_position
             target.my_position = player.my_position
             player.my_position = target_position
@@ -59,6 +61,7 @@ def swap_places(target_id):
     except Exception as e:
         print(e)
         return False
+
 
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
