@@ -177,6 +177,49 @@ class TestGameActions(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['detail'], 'Game not found.')
 
+    def test_leave_game(self):
+        # Test the next_turn endpoint
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+            header = {
+                'id-player': str(players[0].id)
+            }
+            response = client.delete('/game/join/', headers=header)
+            delete_data_full_lobby(card, chat, players, game)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['data']['game_status'], 2)
+
+    def test_leave_game_player_not_in_game(self):
+        # Test the next_turn endpoint
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+            players[0].game = None
+            commit()
+
+            header = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.delete('/game/join/', headers=header)
+            delete_data_full_lobby(card, chat, players, game)
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_leave_game_player_game_not_waiting(self):
+        # Test the next_turn endpoint
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+            game.status = 1  # Playing
+            commit()
+
+            header = {
+                'id-player': str(players[0].id)
+            }
+            response = client.delete('/game/join/', headers=header)
+            delete_data_full_lobby(card, chat, players, game)
+        self.assertEqual(response.status_code, 400)
+
 
 class TestStartGame(unittest.TestCase):
     @classmethod
@@ -419,12 +462,11 @@ class TestInitialRepartitionGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_cards_given()
 
-            header = {
-                'id-player': str(players[1].id)
+            data = {
+                'id_player': str(players[1].id)
             }
 
-            response = client.request('PUT', '/hand/', headers=header)
-
+            response = client.request('PUT', '/hand/', json=data)
             delete_data_full_lobby(card, chat, players, game)
 
             self.assertEqual(response.status_code, 200)
@@ -452,11 +494,15 @@ class TestInitialRepartitionGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_cards_given3()
 
+            data = {
+                'id_player': str(players[1].id)
+            }
+
             header = {
                 'id-player': str(players[1].id)
             }
 
-            responsePut = client.request('PUT', '/hand/', headers=header)
+            responsePut = client.put('/hand/', json=data)
             responseGet = client.request('GET', '/hand/', headers=header)
 
             delete_data_full_lobby(card, chat, players, game)
@@ -536,7 +582,7 @@ class TestGetGameInfo(unittest.TestCase):
             self.assertEqual(response.json()['detail'],
                              'create_data_started_game_set_positions information.')
             # get the players and sort them by id
-            players = response.json()['data']['players'] 
+            players = response.json()['data']['players']
             players.sort(key=lambda x: x['id'])
             self.assertEqual(players[0]['position'], 0)
             self.assertEqual(players[1]['position'], 1)

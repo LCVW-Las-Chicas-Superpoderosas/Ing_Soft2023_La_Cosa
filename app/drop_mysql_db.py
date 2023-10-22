@@ -1,5 +1,6 @@
 import mysql.connector
-from constants import DATABASE_URL, DATABASE_NAME, MYSQL_USER, MYSQL_PASS
+from constants import DATABASE_URL, MYSQL_USER, MYSQL_PASS
+import os
 
 
 def drop_database():
@@ -14,7 +15,7 @@ def drop_database():
         cursor = connection.cursor()
 
         # Drop Database
-        cursor.execute(f'DROP DATABASE {DATABASE_NAME}')
+        cursor.execute(f'DROP DATABASE {os.environ["DATABASE_NAME_LC"]}')
 
         # Close the cursor and the connection
         cursor.close()

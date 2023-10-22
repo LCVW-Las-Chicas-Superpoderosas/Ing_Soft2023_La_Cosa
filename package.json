@@ -2,8 +2,8 @@
   "name": "ing-soft-2023-La-Cosa",
   "version": "0.0.1",
   "scripts": {
-    "test": "sed -i \"s/DATABASE_NAME = 'ing_2023'/DATABASE_NAME = 'ing_2023_tests'/\" app/constants.py && python ./app/create_mysql_db.py && python ./app/test_initializer.py &&pytest ./app/tests && python ./app/drop_mysql_db.py",
-    "start-server": "sed -i \"s/DATABASE_NAME = 'ing_2023_tests'/DATABASE_NAME = 'ing_2023'/\" app/constants.py && python ./app/create_mysql_db.py && python ./app/main.py"
+    "test": "export DATABASE_NAME_LC='ing_2023_test' && python ./app/create_mysql_db.py && python ./app/test_initializer.py &&pytest ./app/tests && python ./app/drop_mysql_db.py",
+    "start-server": "export DATABASE_NAME_LC='ing_2023' && python ./app/create_mysql_db.py && python ./app/main.py"
   },
   "author": "Las Chicas Super Poderosas"
 }

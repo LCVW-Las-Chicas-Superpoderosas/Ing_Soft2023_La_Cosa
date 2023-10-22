@@ -47,6 +47,10 @@ class DiscardCardRequest(BaseModel):
     card_token: str
 
 
+class HandRequest(BaseModel):
+    id_player: int
+
+
 def _validate_game_creation_data(game_data: GameRequest):
     if (game_data.min_players > game_data.max_players or
             game_data.min_players < 4 or game_data.max_players > 12):
@@ -279,7 +283,7 @@ def start_game(game_data: GameStartRequest):
 
         # Give cards to users
         game.initial_repartition_of_cards()
-        
+
         players_hands = {}
         for player in game.players:
             players_hands[player.id] = {
@@ -354,7 +358,8 @@ def player_hand(id_player: int = Header(..., key='id-player')):
 
 
 @router.put('/hand')
-def put_hand(id_player: int = Header(..., key='id-player')):
+def put_hand(hand_request: HandRequest):
+    id_player = hand_request.id_player
     with db_session:
 
         player = MODELBASE.get_first_record_by_value(Player, id=id_player)
@@ -488,6 +493,43 @@ def get_game_info(id_player: int = Header(..., key='id-player')):
                 'game_status': game_status,
                 'players': players,
                 'current_player': current_player
+            }
+        }
+
+
+@router.delete('/game/join')
+def leave_game(id_player: int = Header(..., key='id-player')):
+    with db_session:
+        # Check if the player exists
+        player = _player_exists(id_player)
+        game = player.game
+
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail='The player is not in a game')
+
+        if game.status != GameStatus.WAITING.value:
+            raise HTTPException(
+                status_code=400,
+                detail='Cant leave a game if the player is not in the lobby')
+
+        try:
+            if player.id == player.game.host:
+                player.game.clean_game()
+            else:
+                player.leave_game()
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=e)
+
+        return {
+            'status_code': 200,
+            'detail': f'{player.name} Leave the game succesfulrly. '
+            '(if game_status=2, all players have been wiped out, if is 0, only the player leave)',
+            'data': {
+                'game_status': game.status
             }
         }
 
