@@ -47,6 +47,10 @@ class DiscardCardRequest(BaseModel):
     card_token: str
 
 
+class HandRequest(BaseModel):
+    id_player: int
+
+
 def _validate_game_creation_data(game_data: GameRequest):
     if (game_data.min_players > game_data.max_players or
             game_data.min_players < 4 or game_data.max_players > 12):
@@ -353,7 +357,8 @@ def player_hand(id_player: int = Header(..., key='id-player')):
 
 
 @router.put('/hand')
-def put_hand(id_player: int = Header(..., key='id-player')):
+def put_hand(hand_request: HandRequest):
+    id_player = hand_request.id_player
     with db_session:
 
         player = MODELBASE.get_first_record_by_value(Player, id=id_player)
