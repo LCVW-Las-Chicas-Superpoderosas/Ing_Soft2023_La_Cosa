@@ -231,6 +231,7 @@ def lobby_info(id_player: int = Header(..., key='id-player')):
             'detail': f'{game.name} lobby information.',
             'data': {
                 'players': players,
+                'game_status': game.status,
                 'is_host': is_host,
                 'can_start': can_start
             }
