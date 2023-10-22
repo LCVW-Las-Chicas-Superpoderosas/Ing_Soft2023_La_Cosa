@@ -105,7 +105,7 @@ def play_card(request_body: PlayCardRequest):
         if not user.game.check_turn(user.my_position):
             raise HTTPException(status_code=400, detail=f'It is not {user.name} turn')
 
-        if target_id is not None:
+        if target_id >= 0:
             target_user = MODEL_BASE.get_first_record_by_value(
                 Player, id=target_id)
             if target_user is None:
