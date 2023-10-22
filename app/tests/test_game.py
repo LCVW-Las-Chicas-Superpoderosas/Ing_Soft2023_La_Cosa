@@ -462,12 +462,11 @@ class TestInitialRepartitionGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_cards_given()
 
-            header = {
-                'id-player': str(players[1].id)
+            data = {
+                'id_player': str(players[1].id)
             }
 
-            response = client.request('PUT', '/hand/', headers=header)
-
+            response = client.request('PUT', '/hand/', json=data)
             delete_data_full_lobby(card, chat, players, game)
 
             self.assertEqual(response.status_code, 200)
@@ -495,11 +494,15 @@ class TestInitialRepartitionGame(unittest.TestCase):
         with db_session:
             card, chat, players, game = create_data_cards_given3()
 
+            data = {
+                'id_player': str(players[1].id)
+            }
+
             header = {
                 'id-player': str(players[1].id)
             }
 
-            responsePut = client.request('PUT', '/hand/', headers=header)
+            responsePut = client.put('/hand/', json=data)
             responseGet = client.request('GET', '/hand/', headers=header)
 
             delete_data_full_lobby(card, chat, players, game)
