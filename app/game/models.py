@@ -230,14 +230,6 @@ class Game(Models.Entity):
         # Mezclar denuevo
         random.shuffle(initial_deck_shuffle)
 
-        # Repartir 4 cartas a cada jugador
-        for player in self.players:
-            for i in range(0, 4):
-                player.cards.add(initial_deck_shuffle[0])
-                if initial_deck_shuffle[0].type == 3:
-                    self.the_thing = player.id
-                initial_deck_shuffle.pop(0)
-
         # Armar el mazo con las cartas restantes
         # (infectados + sobrantes de tipo 1 Stay Away!)
         infected_cards = [card for card in self.cards if card.type == 2]
@@ -246,6 +238,14 @@ class Game(Models.Entity):
             card not in (initial_deck_shuffle or infected_cards) and
             card.type != 0
         ]
+
+        # Repartir 4 cartas a cada jugador
+        for player in self.players:
+            for i in range(0, 4):
+                player.cards.add(initial_deck_shuffle[0])
+                if initial_deck_shuffle[0].type == 3:
+                    self.the_thing = player.id
+                initial_deck_shuffle.pop(0)
 
         initial_deck = infected_cards + left_over_stayaway_cards
 
