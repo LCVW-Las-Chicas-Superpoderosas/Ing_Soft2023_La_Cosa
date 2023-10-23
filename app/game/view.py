@@ -284,22 +284,25 @@ def start_game(game_data: GameStartRequest):
         # Give cards to users
         game.initial_repartition_of_cards()
 
-        players_hands = {}
-        for player in game.players:
-            players_hands[player.id] = {
-                'cards': [{'card_token': card.card_token, 'type': card.type}
-                    for card in player.cards]
-            }
-
         # Set game status
         game.status = GameStatus.STARTED.value
+
+        # Fetch first card id in deck 
+        first_card_id = game.get_deck()[0]
+
+        # Fetch first card
+        first_card = MODELBASE.get_first_record_by_value(
+            Card, id=first_card_id)
+
+        # Extract its type
+        first_card_type = first_card.type
 
         # Return OK
         return {
             'status_code': 200,
             'detail': f'Game {game.name} started successfully.',
             'data': {
-                'player_hands': players_hands,
+                'first_card_type': first_card_type,
                 'player_id': player_turn.first().id
             },
         }
