@@ -59,12 +59,28 @@ class Game(Models.Entity):
                 self.current_turn = 0
             else:
                 self.current_turn += 1
+
+            for _ in range(len(self.players)):
+                player_turn = self.players.filter(
+                    my_position=self.current_turn).first()
+                if not player_turn.is_alive:
+                    self.current_turn += 1
+                else:
+                    break
         else:
             # if current_turn is the first player, then next turn is the last player
             if self.current_turn == 0:
                 self.current_turn = len(self.players) - 1
             else:
                 self.current_turn -= 1
+
+            for _ in range(len(self.players)):
+                player_turn = self.players.filter(
+                    my_position=self.current_turn).first()
+                if not player_turn.is_alive:
+                    self.current_turn -= 1
+                else:
+                    break
 
         return self.current_turn
 
