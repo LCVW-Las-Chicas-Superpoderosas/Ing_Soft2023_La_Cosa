@@ -157,6 +157,9 @@ class Game(Models.Entity):
         # List -> Json List
         self.discard_pile = json.dumps(discard_pile_list)
 
+    def empty_discard_pile(self):
+        self.discard_pile = '[]'
+
     def get_deck(self):
         # Convert the JSON list into a python list
         return json.loads(self.deck) if self.deck else []
@@ -235,8 +238,8 @@ class Game(Models.Entity):
         infected_cards = [card for card in self.cards if card.type == 2]
         left_over_stayaway_cards = [
             card for card in all_cards if
-            card not in (initial_deck_shuffle or infected_cards) and
-            card.type != 0
+            card not in (initial_deck_shuffle) and
+            card.type != 0 and card.type != 2
         ]
 
         # Repartir 4 cartas a cada jugador
