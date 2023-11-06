@@ -1,12 +1,14 @@
 import json
 import unittest
 
+from card.effects_mapping import flame_torch
 from card.view import router
 from fastapi import HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.testclient import TestClient
 from mock import patch
-from model_base import initialize_database
+from model_base import initialize_database, ModelBase
+from player.models import Player
 from pony.orm import db_session, commit
 from tests.test_utils import create_data_test, delete_data_full_lobby
 
@@ -139,3 +141,23 @@ class TestPlayCard(unittest.TestCase):
         self.assertEqual(data['data']['user']['id'], player[1].id)
         self.assertTrue(data['data']['the_thing_win'])
         self.assertFalse(data['data']['the_humans_win'])
+
+
+class TestCards(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        initialize_database()
+
+    def test_flame_torch(self, *args, **kwargs):
+        with db_session:
+            player = ModelBase().add_record(Player, name='flame_torch_player', my_position=0)
+            commit()
+            status = flame_torch(player.id)
+        self.assertTrue(status)
+        self.assertFalse(player.is_alive)
+
+    def test_flame_torch_failed(self, *args, **kwargs):
+        with db_session:
+            status = flame_torch(999)
+
+        self.assertFalse(status)

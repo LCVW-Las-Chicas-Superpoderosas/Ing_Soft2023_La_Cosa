@@ -220,6 +220,21 @@ class TestGameActions(unittest.TestCase):
             delete_data_full_lobby(card, chat, players, game)
         self.assertEqual(response.status_code, 400)
 
+    def test_leave_game_player_is_host(self):
+        # Test the next_turn endpoint
+        with db_session:
+            card, chat, players, game = create_data_full_lobby()
+            game.host = players[0].id   # Playing
+            commit()
+
+            header = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.delete('/game/join/', headers=header)
+            delete_data_full_lobby(card, chat, players, game)
+        self.assertEqual(response.status_code, 200)
+
 
 class TestStartGame(unittest.TestCase):
     @classmethod
