@@ -1,13 +1,14 @@
 from card.effects_mapping import EFFECTS_TO_PLAYERS
 from card.models import Card
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi import HTTPException
 from game.models import Game, GameStatus
 from model_base import ModelBase
 from player.models import Player
+from model_base import ConnectionManager
 from pony.orm import db_session
-from pydantic import BaseModel
-
+from pydantic import BaseModel, ValidationError
+import json
 
 router = APIRouter()
 MODEL_BASE = ModelBase()
@@ -15,6 +16,7 @@ MODEL_BASE = ModelBase()
 
 class PlayCardRequest(BaseModel):
     ''' Model The JSON Request Body '''
+    action: str
     card_token: str
     id_player: int
     target_id: int = None  # Default value is None
@@ -47,7 +49,7 @@ def _apply_effect(user, card, target_user = None):
 
     if effect is None:
         raise HTTPException(status_code=400, detail=f'Card {card.name} effect not found')
-   
+
     # If the effect is not specific to a target user, apply it to the user who played the card
     if target_user is None:
         effect_status = effect(user.id)
@@ -77,41 +79,71 @@ def _apply_effect(user, card, target_user = None):
     }
 
 
-@router.post('/hand/play/')
-def play_card(request_body: PlayCardRequest):
-    card_token = request_body.card_token
-    id_player = request_body.id_player
-    target_id = request_body.target_id
 
-    with db_session:
-        card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
+@router.websocket('/hand/play/')
+async def websocket_endpoint(websocket: WebSocket, request_body: PlayCardRequest):
+    manager = ConnectionManager()
+    await websocket.accept()
 
-        # Check if the card exists
-        if card is None:
-            raise HTTPException(status_code=400, detail=f'Card token: {card_token} not found')
+    try:
+        while True:
+            # Receive a message from the WebSocket client
+            message = await websocket.receive_text()
 
-        user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
+            # Parse the incoming JSON message
+            try:
+                request_data = PlayCardRequest.parse_raw(message)
+            except ValidationError:
+                raise HTTPException(status_code=400, detail="Invalid JSON format")
 
-        # Check if the user exists
-        if user is None:
-            raise HTTPException(status_code=400, detail=f'User {id_player} not found')
+            # You should define a message format that includes the required data.
+            # For example, you can send a JSON message like:
+            # {"action": "play_card", "card_token": "your_card_token", "id_player": 123, "target_id": 456}
+            request_data = json.loads(message)
 
-        if not user.is_alive:
-            raise HTTPException(status_code=400, detail=f'User {user.name} is dead')
+            if request_data["action"] == "play_card":
 
-        if user.game.status != GameStatus.STARTED.value:
-            raise HTTPException(status_code=400, detail=f'Game {user.game.name} is not in progress')
+                card_token = request_data['card_token']
+                id_player = request_data['id_player']
+                target_id = request_data['target_id']
 
-        if not user.game.check_turn(user.my_position):
-            raise HTTPException(status_code=400, detail=f'It is not {user.name} turn')
+                with db_session:
+                    card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
 
-        if target_id >= 0:
-            target_user = MODEL_BASE.get_first_record_by_value(
-                Player, id=target_id)
-            if target_user is None:
-                raise HTTPException(status_code=400, detail='Target user not found')
+                    # Check if the card exists
+                    if card is None:
+                        raise HTTPException(status_code=400, detail=f'Card token: {card_token} not found')
 
-            return _apply_effect(user, card, target_user)
+                    user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
 
-        else:
-            return _apply_effect(user, card)
+                    # Check if the user exists
+                    if user is None:
+                        raise HTTPException(status_code=400, detail=f'User {id_player} not found')
+
+                    if not user.is_alive:
+                        raise HTTPException(status_code=400, detail=f'User {user.name} is dead')
+
+                    if user.game.status != GameStatus.STARTED.value:
+                        raise HTTPException(status_code=400, detail=f'Game {user.game.name} is not in progress')
+
+                    if not user.game.check_turn(user.my_position):
+                        raise HTTPException(status_code=400, detail=f'It is not {user.name} turn')
+
+                    if target_id >= 0:
+                        target_user = MODEL_BASE.get_first_record_by_value(
+                            Player, id=target_id)
+                        if target_user is None:
+                            raise HTTPException(status_code=400, detail='Target user not found')
+
+                    # Send the response back to the WebSocket client
+                        await websocket.send_json(_apply_effect(user, card, target_user))
+                    else:
+                        # Send the response back to the WebSocket client
+                        await websocket.send_json(_apply_effect(user, card))
+
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        await manager.broadcast(HTTPException(status_code=400, detail='Target user not found'))
+    except HTTPException as e:
+        manager.disconnect(websocket)
+        await manager.broadcast(e)
