@@ -13,10 +13,86 @@ from tests.test_utils import (create_data_full_lobby,
     create_data_test, create_data_cards_given,
     create_data_cards_given2, create_data_cards_given3,
     create_data_started_game_set_positions,
+    create_data_cards_for_refill,
     delete_data_full_lobby)
 
 
 client = TestClient(app)
+
+
+class TestInitialRepartitionGame(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        initialize_database()
+
+    def test_put_hand(self):
+        with db_session:
+            card, chat, players, game = create_data_cards_given()
+
+            data = {
+                'id_player': str(players[1].id)
+            }
+
+            response = client.request('PUT', '/hand/', json=data)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['data']['picked_cards'],
+                             [{'card_token': 'create_data_started_game_card', 'type': 0}])
+            self.assertEqual(response.json()['data']['next_card_type'], 3)
+
+    def test_get_hand(self):
+        with db_session:
+            card, chat, players, game = create_data_cards_given2()
+
+            header = {
+                'id-player': str(players[0].id)
+            }
+
+            response = client.request('GET', '/hand/', headers=header)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.json()['data']['hand']),
+                             len(['img13.png', 'img1.png', 'create_data_started_game_card', 'img12.png']))
+
+    def test_put_and_get_game_not_started(self):
+        with db_session:
+            card, chat, players, game = create_data_cards_given3()
+
+            data = {
+                'id_player': str(players[1].id)
+            }
+
+            header = {
+                'id-player': str(players[1].id)
+            }
+
+            responsePut = client.put('/hand/', json=data)
+            responseGet = client.request('GET', '/hand/', headers=header)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(responsePut.status_code, 400)
+            self.assertEqual(responseGet.status_code, 400)
+
+    def test_put_hand_refill_deck(self):
+        with db_session:
+            card, chat, players, game = create_data_cards_for_refill()
+
+            data = {
+                'id_player': str(players[1].id)
+            }
+
+            response = client.request('PUT', '/hand/', json=data)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.json()['data']['picked_cards']),
+                             len([{'card_token': 'imjx.png', 'type': 0}]))
 
 
 class TestCreateGameEndpoint(unittest.TestCase):
@@ -451,64 +527,6 @@ class TestDeleteGame(unittest.TestCase):
             delete_data_full_lobby(card, chat, players, game)
 
             self.assertEqual(response.status_code, 400)
-
-
-class TestInitialRepartitionGame(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        initialize_database()
-
-    def test_put_hand(self):
-        with db_session:
-            card, chat, players, game = create_data_cards_given()
-
-            data = {
-                'id_player': str(players[1].id)
-            }
-
-            response = client.request('PUT', '/hand/', json=data)
-            delete_data_full_lobby(card, chat, players, game)
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()['data']['picked_cards'],
-                             [{'card_token': 'create_data_started_game_card', 'type': 0}])
-            self.assertEqual(response.json()['data']['next_card_type'], 3)
-
-    def test_get_hand(self):
-        with db_session:
-            card, chat, players, game = create_data_cards_given2()
-
-            header = {
-                'id-player': str(players[0].id)
-            }
-
-            response = client.request('GET', '/hand/', headers=header)
-
-            delete_data_full_lobby(card, chat, players, game)
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(response.json()['data']['hand']),
-                             len(['img13.png', 'img1.png', 'create_data_started_game_card', 'img12.png']))
-
-    def test_put_and_get_game_not_started(self):
-        with db_session:
-            card, chat, players, game = create_data_cards_given3()
-
-            data = {
-                'id_player': str(players[1].id)
-            }
-
-            header = {
-                'id-player': str(players[1].id)
-            }
-
-            responsePut = client.put('/hand/', json=data)
-            responseGet = client.request('GET', '/hand/', headers=header)
-
-            delete_data_full_lobby(card, chat, players, game)
-
-            self.assertEqual(responsePut.status_code, 400)
-            self.assertEqual(responseGet.status_code, 400)
 
 
 class TestListGames(unittest.TestCase):
