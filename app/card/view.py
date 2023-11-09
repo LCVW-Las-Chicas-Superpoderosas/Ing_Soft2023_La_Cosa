@@ -77,6 +77,32 @@ def _apply_effect(user, card, target_user = None):
     }
 
 
+def _validate_play(card_token, id_player, target_id):
+    user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
+    clockwise = user.game.clockwise
+    adjascent_players = user.game.get_adjascent_players()
+    left_player = adjascent_players[0]
+    right_player = adjascent_players[1]
+
+    # extract number from card token string, e.g., img48.jpg -> 48
+    card_token = int(card_token[3:-4])
+
+    if  22 <= card_token <= 39:
+        if target_id not in adjascent_players:
+            raise HTTPException(status_code=400, detail='Target user is not adjacent to the user')
+
+    if 67 <= card_token <= 81:
+        if (clockwise and target_id != left_player) or (not clockwise and target_id != right_player):
+            raise HTTPException(status_code=400, detail='Target user should be the next player in the turn')
+
+    if (40 <= card_token <= 43) or (48 <= card_token <= 49):
+        if target_id >= 0:
+            # "the player itself" means the card is supposed to be played on the user who played it
+            # OR its a global effect
+            raise HTTPException(status_code=400, detail='Target user is not the player itself')
+
+
+
 @router.post('/hand/play/')
 def play_card(request_body: PlayCardRequest):
     card_token = request_body.card_token
@@ -84,6 +110,9 @@ def play_card(request_body: PlayCardRequest):
     target_id = request_body.target_id
 
     with db_session:
+        
+        _validate_play(card_token, id_player, target_id)
+
         card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
 
         # Check if the card exists
