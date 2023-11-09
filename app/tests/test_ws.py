@@ -29,7 +29,7 @@ class TestWs(unittest.TestCase):
                     'target_id': player[0].id
                 }
             }
-            with client.websocket_connect('/ws/') as websocket:
+            with client.websocket_connect('/ws') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -46,7 +46,7 @@ class TestWs(unittest.TestCase):
                     'target_id': player[0].id
                 }
             }
-            with client.websocket_connect('/ws/') as websocket:
+            with client.websocket_connect('/ws') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -63,7 +63,7 @@ class TestWs(unittest.TestCase):
                     'target_id': 999  # Use a target ID that doesn't exist
                 }
             }
-            with client.websocket_connect('/ws/') as websocket:
+            with client.websocket_connect('/ws') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -82,7 +82,7 @@ class TestWs(unittest.TestCase):
                 'id_player': player[0].id,
                 'target_id': player[0].id}
             }
-            with client.websocket_connect('/ws/') as websocket:
+            with client.websocket_connect('/ws') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -105,7 +105,7 @@ class TestWs(unittest.TestCase):
                 'id_player': player[0].id,
                 'target_id': player[0].id}
             }
-            with client.websocket_connect('/ws/') as websocket:
+            with client.websocket_connect('/ws') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -129,7 +129,7 @@ class TestWs(unittest.TestCase):
                 'id_player': player[1].id,
                 'target_id': player[1].id}
             }
-            with client.websocket_connect('/ws/') as websocket:
+            with client.websocket_connect('/ws') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
 
@@ -145,12 +145,12 @@ class TestWs(unittest.TestCase):
             # Create started game with positions set
             card, chat, players, game = create_data_started_game_set_positions()
 
-            headers = {
+            payload = {
                 'id-player': str(players[0].id)
             }
 
-            with client.websocket_connect('/ws/', headers=headers) as websocket:
-                websocket.send_text(json.dumps({'type': 'game_status', 'content': {}}))
+            with client.websocket_connect('/ws') as websocket:
+                websocket.send_text(json.dumps({'type': 'game_status', 'content': payload}))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, players, game)
 

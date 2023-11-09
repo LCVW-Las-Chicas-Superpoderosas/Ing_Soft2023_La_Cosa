@@ -21,8 +21,8 @@ app.include_router(WsRouter)
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:5173'],  # Add the origins you want to allow
-    allow_methods=['GET', 'POST', 'PUT', 'DELETE'],  # Add the HTTP methods you want to allow
+    allow_origins=['*'],  # Add the origins you want to allow
+    allow_methods=['*'],  # Add the HTTP methods you want to allow
     allow_headers=['*']  # You can specify specific headers here or use "*" to allow any
 )
 

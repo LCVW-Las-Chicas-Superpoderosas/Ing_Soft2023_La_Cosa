@@ -18,6 +18,7 @@ class Content(BaseModel):
     card_token: str = None
     id_player: int = None
     target_id: int = None  # Default value is None
+    # agregar chat_message y message
 
 
 class WSRequest(BaseModel):
@@ -26,12 +27,9 @@ class WSRequest(BaseModel):
     type: str
 
 
-async def get_game_info(websocket):
+async def get_game_info(websocket, request_data):
     # You can access specific headers by their names
-    headers = websocket.scope.get('headers')
-    id_player = [
-        int(value) for key, value in headers if key == b'id-player'
-    ][0]
+    id_player = request_data.id_player
 
     with db_session:
         # Check if the player exists
@@ -117,7 +115,7 @@ async def play_card(websocket, request_data):
 
 
 # idk why but if i tried to add another router is not detected xd
-@router.websocket('/ws/')
+@router.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
     manager = ConnectionManager()
 
@@ -136,10 +134,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 raise HTTPException(status_code=400, detail=validation_error.errors())
 
             if request_data.type == 'play_card':
-                await play_card(websocket, (request_data.content))
+                await play_card(websocket, request_data.content)
             elif request_data.type == 'game_status':
-
-                await get_game_info(websocket)
+                await get_game_info(websocket, request_data.content)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
