@@ -84,6 +84,30 @@ class Game(Models.Entity):
 
         return self.current_turn
 
+
+    def get_adjascent_players(self):
+        # get the current player
+        player = self.players.filter(my_position=self.get_turns()).first()
+
+        # get the players that are alive and are adjascent to the current player
+        # first get the alive players 
+        alive_players = self.players.filter(is_alive=True)
+        # filter the players that are adjascent to the current player, its a circular table
+        # so the adjascent players are the next and previous players
+        if(player.my_position == 0):
+            left = alive_players.filter(my_position=len(self.players)-1).first()
+            right = alive_players.filter(my_position=player.my_position+1).first()
+        elif(player.my_position == len(self.players)-1):
+            left = alive_players.filter(my_position=player.my_position-1).first()
+            right = alive_players.filter(my_position=0).first()
+        else:
+            left = alive_players.filter(my_position=player.my_position-1).first()
+            right = alive_players.filter(my_position=player.my_position+1).first()
+
+        return [left.id, right.id]
+        
+
+
     def check_turn(self, user_position):
         return user_position == self.get_turns()
 
