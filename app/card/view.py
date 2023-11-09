@@ -23,7 +23,7 @@ class PlayCardRequest(BaseModel):
 
 
 # make target_user optional and None by default
-def _apply_effect(user, card, target_user = None):
+def _apply_effect(user, card, target_user=None):
     # Check if the card is in the user's hand
     if card not in user.cards:
         raise HTTPException(status_code=400, detail=f"Card {card.name} is not in the user's hand")
@@ -67,7 +67,7 @@ def _apply_effect(user, card, target_user = None):
     user_data = user.to_dict()
     target_data = target_user.to_dict() if target_user else None
 
-    return {
+    return json.dumps({
         'status_code': 200,
         'detail': f'Card {card.name} played successfully',
         'data': {
@@ -76,36 +76,32 @@ def _apply_effect(user, card, target_user = None):
             'the_thing_win': game.validate_the_thing_win(),
             'the_humans_win': game.validate_humans_win()
         }
-    }
+    })
 
 
-
-@router.websocket('/hand/play/')
-async def websocket_endpoint(websocket: WebSocket, request_body: PlayCardRequest):
+@router.websocket('/ws/hand/')
+async def websocket_endpoint(websocket: WebSocket):
     manager = ConnectionManager()
+
     await websocket.accept()
+    manager.active_connections.append(websocket)
 
     try:
         while True:
             # Receive a message from the WebSocket client
             message = await websocket.receive_text()
 
-            # Parse the incoming JSON message
+            # Parse the incoming JSON message and validate it
             try:
                 request_data = PlayCardRequest.parse_raw(message)
-            except ValidationError:
-                raise HTTPException(status_code=400, detail="Invalid JSON format")
+            except ValidationError as validation_error:
+                raise HTTPException(status_code=400, detail=validation_error.errors())
 
-            # You should define a message format that includes the required data.
-            # For example, you can send a JSON message like:
-            # {"action": "play_card", "card_token": "your_card_token", "id_player": 123, "target_id": 456}
-            request_data = json.loads(message)
+            if request_data.action == 'play_card':
 
-            if request_data["action"] == "play_card":
-
-                card_token = request_data['card_token']
-                id_player = request_data['id_player']
-                target_id = request_data['target_id']
+                card_token = request_data.card_token
+                id_player = request_data.id_player
+                target_id = request_data.target_id
 
                 with db_session:
                     card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
@@ -126,24 +122,22 @@ async def websocket_endpoint(websocket: WebSocket, request_body: PlayCardRequest
                     if user.game.status != GameStatus.STARTED.value:
                         raise HTTPException(status_code=400, detail=f'Game {user.game.name} is not in progress')
 
-                    if not user.game.check_turn(user.my_position):
-                        raise HTTPException(status_code=400, detail=f'It is not {user.name} turn')
-
-                    if target_id >= 0:
-                        target_user = MODEL_BASE.get_first_record_by_value(
-                            Player, id=target_id)
+                    if target_id is not None and target_id >= 0:
+                        target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
                         if target_user is None:
                             raise HTTPException(status_code=400, detail='Target user not found')
 
-                    # Send the response back to the WebSocket client
-                        await websocket.send_json(_apply_effect(user, card, target_user))
+                        # Send the response back to the WebSocket client
+                        await websocket.send_text(_apply_effect(user, card, target_user))
                     else:
                         # Send the response back to the WebSocket client
-                        await websocket.send_json(_apply_effect(user, card))
+                        await websocket.send_text(_apply_effect(user, card))
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await manager.broadcast(HTTPException(status_code=400, detail='Target user not found'))
     except HTTPException as e:
-        manager.disconnect(websocket)
-        await manager.broadcast(e)
+        await websocket.send_text(
+            json.dumps({
+                'status_code': e.status_code,
+                'detail': e.detail
+            }))

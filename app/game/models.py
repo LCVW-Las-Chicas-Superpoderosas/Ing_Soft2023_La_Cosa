@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import IntEnum
 
 from model_base import db_session, Models, ModelBase
@@ -21,7 +20,6 @@ class Game(Models.Entity):
     name = Required(str, unique=True, index=True)
     status = Required(GameStatus, default=GameStatus.WAITING.value)
     password = Optional(str, nullable=True)
-    created_at = Required(datetime, default=datetime.utcnow)
     host = Required(int)  # Player_id of the host
     the_thing = Optional(int, nullable=True)  # Player_id of the thing
     chats = Required('Chat')
