@@ -8,7 +8,6 @@ from player.models import Player
 from pony.orm import db_session
 from pydantic import BaseModel
 
-
 router = APIRouter()
 MODEL_BASE = ModelBase()
 
@@ -21,7 +20,7 @@ class PlayCardRequest(BaseModel):
 
 
 # make target_user optional and None by default
-def _apply_effect(user, card, target_user = None):
+def _apply_effect(user, card, target_user=None):
     # Check if the card is in the user's hand
     if card not in user.cards:
         raise HTTPException(status_code=400, detail=f"Card {card.name} is not in the user's hand")
@@ -47,7 +46,7 @@ def _apply_effect(user, card, target_user = None):
 
     if effect is None:
         raise HTTPException(status_code=400, detail=f'Card {card.name} effect not found')
-   
+
     # If the effect is not specific to a target user, apply it to the user who played the card
     if target_user is None:
         effect_status = effect(user.id)

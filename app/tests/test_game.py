@@ -220,7 +220,7 @@ class TestCreateGameEndpoint(unittest.TestCase):
         )
 
 
-class TestGameActions(unittest.TestCase):
+class TestGametypes(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # Create and initialize the database
