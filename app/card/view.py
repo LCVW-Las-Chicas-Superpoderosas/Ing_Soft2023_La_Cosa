@@ -87,15 +87,30 @@ def _validate_play(card_token, id_player, target_id):
     # extract number from card token string, e.g., img48.jpg -> 48
     card_token = int(card_token[3:-4])
 
+
+    '''
+    [22, 26]: flame torch
+    [27, 29]: analysis
+    [32, 39]: suspicion
+    ''' 
     if  22 <= card_token <= 39:
         if target_id not in adjascent_players:
             raise HTTPException(status_code=400, detail='Target user is not adjacent to the user')
 
-    if 67 <= card_token <= 81:
+    '''
+    [67, 70]: scary
+    [74, 77]: no, thanks!
+    [78, 80]: you failed! 
+    '''
+    if (67 <= card_token <= 70) or (74 <= card_token <= 80):
         if (clockwise and target_id != left_player) or (not clockwise and target_id != right_player):
             raise HTTPException(status_code=400, detail='Target user should be the next player in the turn')
 
-    if (40 <= card_token <= 43) or (48 <= card_token <= 49):
+    '''
+    [40, 42]: whisky
+    [48, 49]: watch your back
+    '''
+    if (40 <= card_token <= 42) or (48 <= card_token <= 49):
         if target_id >= 0:
             # "the player itself" means the card is supposed to be played on the user who played it
             # OR its a global effect
