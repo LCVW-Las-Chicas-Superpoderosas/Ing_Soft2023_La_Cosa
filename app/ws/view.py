@@ -151,24 +151,24 @@ async def game_status_ws(websocket: WebSocket):
     manager = ConnectionManager()
     await websocket.accept()
     manager.active_connections.append(websocket)
+    request_data = None
     try:
         while True:
             try:
                 message = await asyncio.wait_for(websocket.receive_text(), timeout=3)  # Set a timeout of 3 seconds
-                if message is not None:
-                    try:
-                        # Parse the incoming JSON message and validate it
-                        request_data = WSRequest.parse_raw(message)
-                    except ValidationError as validation_error:
-                        await websocket.send_text(
-                            json.dumps({
-                                'status_code': 400,
-                                'detail': validation_error.errors()
-                            }))
+                try:
+                    # Parse the incoming JSON message and validate it
+                    request_data = WSRequest.parse_raw(message)
+                    await get_game_info(websocket, request_data.content)
+                except ValidationError as validation_error:
+                    await websocket.send_text(
+                        json.dumps({
+                            'status_code': 400,
+                            'detail': validation_error.errors()
+                        }))
             except asyncio.TimeoutError:
-                pass
-
-            await get_game_info(websocket, request_data.content)
+                if request_data is not None:
+                    await get_game_info(websocket, request_data.content)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
