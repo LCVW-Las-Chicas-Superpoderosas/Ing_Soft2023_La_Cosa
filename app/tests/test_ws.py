@@ -22,14 +22,13 @@ class TestWs(unittest.TestCase):
         with db_session:
             card, chat, player, game = create_data_test()
             payload = {
-                'type': 'play_card',
                 'content': {
                     'card_token': 'test_card_fake',
                     'id_player': player[0].id,
                     'target_id': player[0].id
                 }
             }
-            with client.websocket_connect('/ws') as websocket:
+            with client.websocket_connect('/ws/hand_play') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -39,14 +38,13 @@ class TestWs(unittest.TestCase):
         with db_session:
             card, chat, player, game = create_data_test()
             payload = {
-                'type': 'play_card',
                 'content': {
                     'card_token': card.card_token,
                     'id_player': 999,  # Use an ID that doesn't exist
                     'target_id': player[0].id
                 }
             }
-            with client.websocket_connect('/ws') as websocket:
+            with client.websocket_connect('/ws/hand_play') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -56,14 +54,13 @@ class TestWs(unittest.TestCase):
         with db_session:
             card, chat, player, game = create_data_test()
             payload = {
-                'type': 'play_card',
                 'content': {
                     'card_token': card.card_token,
                     'id_player': player[0].id,
                     'target_id': 999  # Use a target ID that doesn't exist
                 }
             }
-            with client.websocket_connect('/ws') as websocket:
+            with client.websocket_connect('/ws/hand_play') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -77,12 +74,11 @@ class TestWs(unittest.TestCase):
             game.status = 1
             commit()
             payload = {
-                'type': 'play_card',
                 'content': {'card_token': card.card_token,
                 'id_player': player[0].id,
                 'target_id': player[0].id}
             }
-            with client.websocket_connect('/ws') as websocket:
+            with client.websocket_connect('/ws/hand_play') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -100,12 +96,11 @@ class TestWs(unittest.TestCase):
             player[1].is_alive = False
             commit()
             payload = {
-                'type': 'play_card',
                 'content': {'card_token': card.card_token,
                 'id_player': player[0].id,
                 'target_id': player[0].id}
             }
-            with client.websocket_connect('/ws') as websocket:
+            with client.websocket_connect('/ws/hand_play') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
@@ -124,12 +119,11 @@ class TestWs(unittest.TestCase):
             game.next_turn()
             commit()
             payload = {
-                'type': 'play_card',
                 'content': {'card_token': card.card_token,
                 'id_player': player[1].id,
                 'target_id': player[1].id}
             }
-            with client.websocket_connect('/ws') as websocket:
+            with client.websocket_connect('/ws/hand_play') as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
 
@@ -146,11 +140,11 @@ class TestWs(unittest.TestCase):
             card, chat, players, game = create_data_started_game_set_positions()
 
             payload = {
-                'id-player': str(players[0].id)
+                'id_player': str(players[0].id)
             }
 
-            with client.websocket_connect('/ws') as websocket:
-                websocket.send_text(json.dumps({'type': 'game_status', 'content': payload}))
+            with client.websocket_connect('/ws/game_status') as websocket:
+                websocket.send_text(json.dumps({'content': payload}))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, players, game)
 

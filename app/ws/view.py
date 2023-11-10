@@ -10,6 +10,7 @@ from pony.orm import db_session
 from pydantic import BaseModel, ValidationError
 import json
 from game.view import _player_exists
+import asyncio
 
 MODEL_BASE = ModelBase()
 
@@ -24,7 +25,6 @@ class Content(BaseModel):
 class WSRequest(BaseModel):
     ''' Model The JSON Request Body '''
     content: Content = None
-    type: str
 
 
 async def get_game_info(websocket, request_data):
@@ -115,7 +115,7 @@ async def play_card(websocket, request_data):
 
 
 # idk why but if i tried to add another router is not detected xd
-@router.websocket('/ws')
+@router.websocket('/ws/hand_play')
 async def websocket_endpoint(websocket: WebSocket):
     manager = ConnectionManager()
 
@@ -133,10 +133,42 @@ async def websocket_endpoint(websocket: WebSocket):
             except ValidationError as validation_error:
                 raise HTTPException(status_code=400, detail=validation_error.errors())
 
-            if request_data.type == 'play_card':
-                await play_card(websocket, request_data.content)
-            elif request_data.type == 'game_status':
-                await get_game_info(websocket, request_data.content)
+            await play_card(websocket, request_data.content)
+
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except HTTPException as e:
+        await websocket.send_text(
+            json.dumps({
+                'status_code': e.status_code,
+                'detail': e.detail
+            }))
+
+
+# idk why but if i tried to add another router is not detected xd
+@router.websocket('/ws/game_status')
+async def game_status_ws(websocket: WebSocket):
+    manager = ConnectionManager()
+    await websocket.accept()
+    manager.active_connections.append(websocket)
+    try:
+        while True:
+            try:
+                message = await asyncio.wait_for(websocket.receive_text(), timeout=3)  # Set a timeout of 3 seconds
+                if message is not None:
+                    try:
+                        # Parse the incoming JSON message and validate it
+                        request_data = WSRequest.parse_raw(message)
+                    except ValidationError as validation_error:
+                        await websocket.send_text(
+                            json.dumps({
+                                'status_code': 400,
+                                'detail': validation_error.errors()
+                            }))
+            except asyncio.TimeoutError:
+                pass
+
+            await get_game_info(websocket, request_data.content)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
