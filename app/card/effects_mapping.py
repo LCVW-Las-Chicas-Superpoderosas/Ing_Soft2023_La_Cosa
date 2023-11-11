@@ -1,9 +1,15 @@
+import random
+
 from model_base import ModelBase
 from player.models import Player
 from pony.orm import db_session
 
 MODEL_BASE = ModelBase()
 
+# status codes for the effects
+FAIL = 0
+SUCCESS = 1
+BEING_PLAYED = 2
 
 def flame_torch(target_id):
     try:
@@ -11,10 +17,14 @@ def flame_torch(target_id):
             target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
             target_user.is_alive = False
             target_user.flush()
-            return True
+            return {
+                'status': SUCCESS
+            }
     except Exception as e:
         print(e)
-        return False
+        return {
+            'status': FAIL
+        }
 
 
 # "watch_your_back" is a card that sets Game.clockwise to False
@@ -25,10 +35,14 @@ def watch_your_back(player_id):
             game = player.game
             game.clockwise = not game.clockwise
             game.flush()
-            return True
+            return {
+                'status': SUCCESS
+            }
     except Exception as e:
         print(e)
-        return False
+        return {
+            'status': FAIL
+        }
 
 
 def swap_places(target_id):
@@ -57,14 +71,44 @@ def swap_places(target_id):
             target.flush()
             player.flush()
             game.flush()
-            return True
+            return {
+                'status': SUCCESS
+            }
     except Exception as e:
         print(e)
-        return False
+        return {
+            'status': FAIL
+        }
+
+
+# "suspicion" retrieves a random card from the target player's hand 
+def suspicion(target_id):
+    try:
+        with db_session:
+            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
+            # first get the Set of cards from the target player
+            cards_set = target_user.cards
+            # then get a random card from that Set
+            random_card = random.choice(list(cards_set))
+
+            # create a dict with status 
+            # and data the card name
+            return {
+                'status': SUCCESS,
+                'data': random_card.name
+            }
+
+    except Exception as e:
+        print(e)
+        return {
+            'status': FAIL
+        }
+            
 
 
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
     'vigila tus espaldas': watch_your_back,
-    'cambio de lugar!': swap_places
+    'cambio de lugar!': swap_places,
+    'sospecha': suspicion
 }
