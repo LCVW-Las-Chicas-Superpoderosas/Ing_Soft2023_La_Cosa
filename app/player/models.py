@@ -24,6 +24,26 @@ class Player(Models.Entity):
     def add_cards(self, cards):
         self.cards = cards
 
+    def add_card(self, card):
+        card_list = list(self.cards)
+        card_list.append(card)
+        self.cards = card_list
+
+    def can_neglect_exchange(self):
+        defense_cards = ['Fallaste!', 'Aterrador', '¡No, gracias!']
+        cards = []
+        for name in defense_cards:
+            c = self.cards.select().filter(name=name).first()
+            if c is not None:
+                cards.append(c)
+        return cards
+
+    def get_hand(self):
+        return [
+            {'card_token': card.card_token, 'type': card.type}
+            for card in self.cards
+        ]
+
     def is_infected(self):
         card = None
         if self.cards is not None:
@@ -38,8 +58,13 @@ class Player(Models.Entity):
 
     def remove_card(self, card_id):
         card = self.cards.select().filter(id=card_id).first()
-        card.delete()
+        card_list = list(self.cards)
+        card_list.remove(card)
 
     def check_card_in_hand(self, card_id):
         card = self.cards.select().filter(id=card_id).first()
+        return card is not None
+
+    def check_card_token_in_hand(self, card_token):
+        card = self.cards.select().filter(card_token=card_token).first()
         return card is not None
