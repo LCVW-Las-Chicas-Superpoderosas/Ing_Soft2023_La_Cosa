@@ -312,7 +312,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     'status_code': 200,
                                     'detail': 'Target player need to exchange',
                                     'data': {
-                                        'type': 'exchange_offer',
+                                        'type': 'exchange_offert',
                                         'attacker_id': player.id,
                                         'attacker_name': player.name
 
