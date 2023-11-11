@@ -95,7 +95,7 @@ def suspicion(target_id):
             # and data the card name
             return {
                 'status': SUCCESS,
-                'data': random_card.name
+                'data': random_card.card_token
             }
 
     except Exception as e:
