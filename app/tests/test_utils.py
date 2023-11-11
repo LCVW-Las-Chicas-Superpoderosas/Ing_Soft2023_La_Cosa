@@ -354,3 +354,30 @@ def create_data_started_game_set_positions():
         player4 = model_base.get_first_record_by_value(Player, name='create_data_started_game_set_positions_4')
         game = model_base.get_first_record_by_value(Game, name='create_data_started_game_set_positions')
     return card, chat, [player1, player2, player3, player4], game
+
+
+def create_data_player_retrieve_defense_cards_test():
+    try:
+        card1 = model_base.get_first_record_by_value(Card, id=69)
+        card2 = model_base.get_first_record_by_value(Card, id=71)
+        card3 = model_base.get_first_record_by_value(Card, id=74)
+        card4 = model_base.get_first_record_by_value(Card, id=79)
+        card5 = model_base.get_first_record_by_value(Card, id=23)
+        card6 = model_base.get_first_record_by_value(Card, name='Nada de barbacoas!')
+        player1 = model_base.add_record(Player, name='retrieve_defense_cards', cards={card1, card2, card3, card4, card5, card6})
+        player2 = model_base.add_record(Player, name='nocardsbro')
+
+        commit()
+
+    except Exception:
+        card1 = model_base.get_first_record_by_value(Card, id=69)
+        card2 = model_base.get_first_record_by_value(Card, id=71)
+        card3 = model_base.get_first_record_by_value(Card, id=74)
+        card4 = model_base.get_first_record_by_value(Card, id=79)
+        card5 = model_base.get_first_record_by_value(Card, id=23)
+        card6 = model_base.get_first_record_by_value(Card, name='Nada de barbacoas!')
+        player1 = model_base.get_first_record_by_value(Player, name='retrieve_defense_cards')
+        player2 = model_base.get_first_record_by_value(Player, name='nocardsbro')
+
+        commit()
+    return player1, player2

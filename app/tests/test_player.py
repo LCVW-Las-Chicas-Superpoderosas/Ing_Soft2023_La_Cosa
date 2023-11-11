@@ -6,6 +6,7 @@ from pony.orm import db_session, commit
 from player.models import Player
 import unittest
 import os
+from tests.test_utils import create_data_player_retrieve_defense_cards_test
 
 CLIENT = TestClient(app)
 
@@ -67,3 +68,56 @@ class TestRegisterEndpoint(unittest.TestCase):
         data = response.json()
         self.assertIn('detail', data)
         self.assertIn('IntegrityError', data['detail'])
+
+
+class TestFunPlayer(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        create_database(os.environ['DATABASE_NAME_LC'])
+        initialize_database()
+
+    def test_retrieve_defense_card_functions(self):
+        with db_session:
+            player1, player2 = create_data_player_retrieve_defense_cards_test()
+
+            # player 1 with all cards
+
+            tienelanzallamasdef = player1.check_defense_of_card_attack_in_hand(24)
+
+            tieneaquiestoybien = player1.check_defense_of_card_attack_in_hand(54)
+
+            cartasdedefensaattack = player1.return_defense_cards_of_attack(24)
+
+            tieneaterrador = player1.check_defense_of_exchange_in_hand()
+
+            cartasdeexchange = player1.return_defense_cards_of_exchange()
+
+            # player 2 with no cards
+
+            tienelanzallamasdef2 = player2.check_defense_of_card_attack_in_hand(24)
+
+            tieneaquiestoybien2 = player2.check_defense_of_card_attack_in_hand(54)
+
+            cartasdedefensaattack2 = player2.return_defense_cards_of_attack(24)
+
+            tieneaterrador2 = player2.check_defense_of_exchange_in_hand()
+
+            cartasdeexchange2 = player2.return_defense_cards_of_exchange()
+
+            # assert player 1
+
+            self.assertEqual(tienelanzallamasdef, True)
+            self.assertEqual(tieneaquiestoybien, True)
+            self.assertEqual(tieneaterrador, True)
+            self.assertEqual(len(cartasdedefensaattack), len([{'card_tokens': 'img81.jpg'}]))
+            self.assertEqual(len(cartasdeexchange), len([{'card_tokens': 'img69.jpg'},
+                                                 {'card_tokens': 'img79.jpg'}, {'card_tokens': 'img74.jpg'}]))
+
+            # assert player 2
+
+            self.assertEqual(tienelanzallamasdef2, False)
+            self.assertEqual(tieneaquiestoybien2, False)
+            self.assertEqual(tieneaterrador2, False)
+            self.assertEqual(cartasdedefensaattack2, [])
+            self.assertEqual(cartasdeexchange2, [])
