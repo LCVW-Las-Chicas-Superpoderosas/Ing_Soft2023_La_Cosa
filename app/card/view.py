@@ -49,11 +49,11 @@ def _apply_effect(user, card, target_user=None):
 
     # If the effect is not specific to a target user, apply it to the user who played the card
     if target_user is None:
-        effect_status = effect(user.id)
+        effect_result = effect(user.id)
     else:
-        effect_status = effect(target_user.id)
+        effect_result = effect(target_user.id)
 
-    if effect_status is False:
+    if effect_result['status'] is False:
         raise HTTPException(status_code=400, detail=f'Card {card.name} effect failed')
 
     # Update the entities
@@ -68,6 +68,7 @@ def _apply_effect(user, card, target_user=None):
         'status_code': 200,
         'detail': f'Card {card.name} played successfully',
         'data': {
+            'effect_result': effect_result['data'],
             'user': user_data,
             'target_user': target_data,
             'the_thing_win': game.validate_the_thing_win(),
