@@ -92,19 +92,28 @@ class Game(Models.Entity):
         # get the players that are alive and are adjascent to the current player
         # first get the alive players 
         alive_players = self.players.filter(is_alive=True)
+        for player in alive_players:
+            print(player.name)
         # filter the players that are adjascent to the current player, its a circular table
         # so the adjascent players are the next and previous players
-        if(player.my_position == 0):
-            left = alive_players.filter(my_position=len(self.players)-1).first()
-            right = alive_players.filter(my_position=player.my_position+1).first()
-        elif(player.my_position == len(self.players)-1):
-            left = alive_players.filter(my_position=player.my_position-1).first()
-            right = alive_players.filter(my_position=0).first()
+        
+        # if the alive_players list length is 1, then both adjascent player are the same player
+        if len(alive_players) == 1:
+            return [player.id, player.id]
+        
+        # if the alive_players list length is 2, then the adjascent players are the same neighbor
         else:
-            left = alive_players.filter(my_position=player.my_position-1).first()
-            right = alive_players.filter(my_position=player.my_position+1).first()
-
-        return [left.id, right.id]
+            if(player.my_position == 0):
+                left = alive_players.filter(my_position=len(self.players)-1).first()
+                right = alive_players.filter(my_position=player.my_position+1).first()
+            elif(player.my_position == len(self.players)-1):
+                left = alive_players.filter(my_position=player.my_position-1).first()
+                right = alive_players.filter(my_position=0).first()
+            else:
+                left = alive_players.filter(my_position=player.my_position-1).first()
+                right = alive_players.filter(my_position=player.my_position+1).first()
+            
+            return [left.id, right.id]
         
 
 
