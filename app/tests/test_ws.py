@@ -67,7 +67,9 @@ class TestWs(unittest.TestCase):
 
         self.assertEqual(data['status_code'], 400)
 
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: True})
+
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_play_card_with_valid_data(self, *args, **kwargs):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -88,7 +90,8 @@ class TestWs(unittest.TestCase):
         self.assertFalse(data['data']['the_thing_win'])
         self.assertFalse(data['data']['the_humans_win'])
 
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: True})
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_human_win_with_valid_data(self, *args, **kwargs):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -110,7 +113,9 @@ class TestWs(unittest.TestCase):
         self.assertFalse(data['data']['the_thing_win'])
         self.assertTrue(data['data']['the_humans_win'])
 
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: True})
+
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_thing_win_with_valid_data(self, *args, **kwargs):
         with db_session:
             card, chat, player, game = create_data_test()
