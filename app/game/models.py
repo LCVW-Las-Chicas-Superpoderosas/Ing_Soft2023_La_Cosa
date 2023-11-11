@@ -92,8 +92,6 @@ class Game(Models.Entity):
         # get the players that are alive and are adjascent to the current player
         # first get the alive players 
         alive_players = self.players.filter(is_alive=True)
-        for player in alive_players:
-            print(player.name)
         # filter the players that are adjascent to the current player, its a circular table
         # so the adjascent players are the next and previous players
         
