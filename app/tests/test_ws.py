@@ -164,3 +164,135 @@ class TestWs(unittest.TestCase):
             self.assertEqual(players[2]['position'], 2)
             self.assertEqual(players[3]['position'], 3)
             self.assertEqual(data['data']['current_player'], players[0]['id'])
+
+    def test_card_exchange_with_target_dead_data(self, *args, **kwargs):
+        with db_session:
+
+            card, chat, player, game = create_data_test()
+            player[0].is_alive = True
+            player[1].is_alive = False
+            commit()
+            payload = {
+                'content': {
+                    'type': 'exchange',
+                    'card_token': card.card_token,
+                    'id_player': player[0].id,
+                    'target_id': player[1].id
+                }
+            }
+            with client.websocket_connect('/ws/card_exchange', params={'id_player': player[0].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                response = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(response['status_code'], 400)
+
+    def test_card_exchange_with_player_dead_data(self, *args, **kwargs):
+        with db_session:
+
+            card, chat, player, game = create_data_test()
+            player[0].is_alive = False
+            player[1].is_alive = True
+            commit()
+            payload = {
+                'content': {
+                    'type': 'exchange',
+                    'card_token': card.card_token,
+                    'id_player': player[0].id,
+                    'target_id': player[1].id
+                }
+            }
+            with client.websocket_connect('/ws/card_exchange', params={'id_player': player[0].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                response = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(response['status_code'], 400)
+
+    def test_card_exchange_with_valid_data(self, *args, **kwargs):
+        with db_session:
+
+            card, chat, player, game = create_data_test()
+            player[0].is_alive = True
+            player[1].is_alive = True
+            commit()
+            payload = {
+                'content': {
+                    'type': 'exchange',
+                    'card_token': card.card_token,
+                    'id_player': player[0].id,
+                    'target_id': player[1].id
+                }
+            }
+            with client.websocket_connect('/ws/card_exchange', params={'id_player': player[0].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                response = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(response['status_code'], 200)
+        self.assertEqual(response['data']['type'], 'exchange')
+
+    def test_card_exchange_offer_with_valid_data(self, *args, **kwargs):
+        with db_session:
+
+            card, chat, player, game = create_data_test()
+            player[0].is_alive = True
+            player[1].is_alive = True
+            commit()
+            payload = {
+                'content': {
+                    'type': 'exchange_offert',
+                    'card_token': card.card_token,
+                    'id_player': player[0].id,
+                    'target_id': player[1].id
+                }
+            }
+            with client.websocket_connect('/ws/card_exchange', params={'id_player': player[0].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                response = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(response['status_code'], 200)
+        self.assertEqual(response['data']['type'], 'get_result')
+
+    def test_card_defend_with_valid_data(self, *args, **kwargs):
+        with db_session:
+
+            card, chat, player, game = create_data_test()
+            player[0].is_alive = True
+            player[1].is_alive = True
+            commit()
+            payload = {
+                'content': {
+                    'type': 'defend',
+                    'card_token': card.card_token,
+                    'id_player': player[1].id,
+                    'target_id': player[0].id
+                }
+            }
+            with client.websocket_connect('/ws/card_exchange', params={'id_player': player[1].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                response = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(response['status_code'], 200)
+        self.assertEqual(response['data']['type'], 'get_result')
+
+    def test_card_result_with_valid_data(self, *args, **kwargs):
+        with db_session:
+
+            card, chat, player, game = create_data_test()
+            player[0].is_alive = True
+            commit()
+            payload = {
+                'content': {
+                    'type': 'result',
+                }
+            }
+            with client.websocket_connect('/ws/card_exchange', params={'id_player': player[0].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                response = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(response['status_code'], 200)
+        self.assertEqual(response['data']['type'], 'result')

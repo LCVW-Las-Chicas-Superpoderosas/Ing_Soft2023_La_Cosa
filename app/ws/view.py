@@ -16,6 +16,7 @@ MODEL_BASE = ModelBase()
 
 
 class Content(BaseModel):
+    type: str = None
     card_token: str = None
     id_player: int = None
     target_id: int = None  # Default value is None
@@ -66,8 +67,26 @@ async def get_game_info(websocket, request_data):
         current_player = game.players.filter(
             my_position=game.current_turn).first().id
 
+        current_player = game.players.filter(
+            my_position=game.current_turn).first().id
+
         # Get the game status
         game_status = game.status
+
+        if game.clockwise:
+            # if current_turn is the last player, then next turn is the first player
+            if game.current_turn == len(game.players) - 1:
+                next_turn = 0
+            else:
+                next_turn = game.current_turn + 1
+        else:
+            if game.current_turn == 0:
+                next_turn = len(game.players) - 1
+            else:
+                next_turn = game.current_turn - 1
+
+        next_player = game.players.filter(
+            my_position=next_turn).first().id
 
         await websocket.send_text(json.dumps({
             'status_code': 200,
@@ -75,7 +94,8 @@ async def get_game_info(websocket, request_data):
             'data': {
                 'game_status': game_status,
                 'players': players,
-                'current_player': current_player
+                'current_player': current_player,
+                'next_player': next_player
             }
         }))
 
@@ -116,11 +136,11 @@ async def play_card(websocket, request_data):
 
 # idk why but if i tried to add another router is not detected xd
 @router.websocket('/ws/hand_play')
-async def websocket_endpoint(websocket: WebSocket):
+async def hand_play_endpoint(websocket: WebSocket):
     manager = ConnectionManager()
 
     await websocket.accept()
-    manager.active_connections.append(websocket)
+    manager.active_connections.append((websocket, None))
 
     try:
         while True:
@@ -145,12 +165,11 @@ async def websocket_endpoint(websocket: WebSocket):
             }))
 
 
-# idk why but if i tried to add another router is not detected xd
 @router.websocket('/ws/game_status')
 async def game_status_ws(websocket: WebSocket):
     manager = ConnectionManager()
     await websocket.accept()
-    manager.active_connections.append(websocket)
+    manager.active_connections.append((websocket, None))
     request_data = None
     try:
         while True:
@@ -172,6 +191,173 @@ async def game_status_ws(websocket: WebSocket):
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+    except HTTPException as e:
+        await websocket.send_text(
+            json.dumps({
+                'status_code': e.status_code,
+                'detail': e.detail
+            }))
+
+
+@router.websocket('/ws/card_exchange')
+async def card_exchange(websocket: WebSocket, id_player: int):
+    mb = ModelBase()
+
+    manager = ConnectionManager()
+    await websocket.accept()
+    manager.active_connections.append((websocket, id_player))
+
+    try:
+        while True:
+            message = await websocket.receive_text()
+            try:
+                # Parse the incoming JSON message and validate it
+                request_data = WSRequest.parse_raw(message)
+
+                if request_data.content.type == 'exchange_offert':
+                    with db_session:
+                        card = mb.get_first_record_by_value(
+                            Card, card_token=request_data.content.card_token)
+                        target = mb.get_first_record_by_value(
+                            Player, id=request_data.content.target_id)
+
+                        player = mb.get_first_record_by_value(Player, id=id_player)
+
+                        if not target.is_alive:
+                            raise HTTPException(status_code=400, detail='Target is mad dead')
+                        if not player.is_alive:
+                            raise HTTPException(status_code=400, detail='Player is mad dead')
+
+                        # removemos la carta que quiere dar
+                        player.remove_card(card.id)
+                        await manager.send_to(
+                            id_player,
+                            data=json.dumps({
+                                'status_code': 200,
+                                'detail': 'Exchange offer finished',
+                                'data': {
+                                    'type': 'get_result'
+                                }}))
+                        await manager.send_to(
+                            target.id,
+                            data=json.dumps({
+                                'status_code': 200,
+                                'detail': 'Exchange finished',
+                                'data': {
+                                    'type': 'get_result',
+                                }}))
+                        target.add_card(card)
+                elif request_data.content.type == 'result':
+                    with db_session:
+                        player = mb.get_first_record_by_value(Player, id=id_player)
+
+                        if not player.is_alive:
+                            raise HTTPException(status_code=400, detail='Player is mad dead')
+
+                        await manager.send_to(
+                            id_player,
+                            data=json.dumps({
+                                'status_code': 200,
+                                'detail': 'Result from exchange',
+                                'data': {
+                                    'type': 'result',
+                                    'hand': player.get_hand()
+                                }}))
+
+                elif request_data.content.type == 'exchange':
+                    with db_session:
+                        card = mb.get_first_record_by_value(
+                            Card, card_token=request_data.content.card_token)
+                        target = mb.get_first_record_by_value(
+                            Player, id=request_data.content.target_id)
+
+                        player = mb.get_first_record_by_value(Player, id=id_player)
+                        if not target.is_alive:
+                            raise HTTPException(status_code=400, detail='Target is mad dead')
+
+                        if not player.is_alive:
+                            raise HTTPException(status_code=400, detail='Player is mad dead')
+
+                        defense = target.can_neglect_exchange()
+
+                        if len(defense) != 0:
+                            # Len not 0 aka tiene defens
+                            await manager.send_to(
+                                target.id,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': 'Target player can defend',
+                                    'data': {
+                                        'type': 'defend',
+                                        'defense_cards': defense,
+                                        'attacker_id': player.id,
+                                        'attacker_name': player.name
+                                    }
+                                }))
+                        else:
+                            # removemos la carta que quiere dar
+                            player.remove_card(card.id)
+                            await manager.send_to(
+                                id_player,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': f'Target player cant defend, exchanged card {card.id}',
+                                    'data': {
+                                        'type': 'exchange'
+                                    }}))
+
+                            await manager.send_to(
+                                target.id,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': 'Target player need to exchange',
+                                    'data': {
+                                        'type': 'exchange_offer',
+                                        'attacker_id': player.id,
+                                        'attacker_name': player.name
+
+                                    }}))
+                            target.add_card(card)
+
+                elif request_data.content.type == 'defend':
+                    with db_session:
+                        player = mb.get_first_record_by_value(Player, id=id_player)
+                        if not player.is_alive:
+                            raise HTTPException(status_code=400, detail='Player is mad dead')
+
+                        card = mb.get_first_record_by_value(
+                            Card, card_token=request_data.content.card_token)
+
+                        if player.check_card_in_hand(card.id):
+                            player.remove_card(card.id)
+                            await manager.send_to(
+                                id_player,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': 'Target player defend succesfully',
+                                    'data': {
+                                        'type': 'get_result',
+                                    }}))
+                        else:
+                            await websocket.send_text(
+                                json.dumps({
+                                    'status_code': 400,
+                                    'detail': 'Player doesnt have that card',
+                                    'data': {
+                                        'type': 'defend'
+                                    }
+                                }))
+
+            except ValidationError as validation_error:
+                await websocket.send_text(
+                    json.dumps({
+                        'status_code': 400,
+                        'detail': validation_error.errors()
+                    }))
+
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, id_player)
+
     except HTTPException as e:
         await websocket.send_text(
             json.dumps({

@@ -15,19 +15,20 @@ Models = Database(
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: list[WebSocket] = []
+        self.active_connections = []
 
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+    def disconnect(self, websocket: WebSocket, player_id: int = None):
+        self.active_connections.remove((websocket, player_id))
         websocket.close()
 
     async def broadcast(self, message: str):
         for connection in self.active_connections:
-            await connection.send_text(message)
+            await connection[0].send_text(message)
+
+    async def send_to(self, player_id: int, data: str):
+        for connection in self.active_connections:
+            if connection[1] == player_id:
+                await connection[0].send_text(data)
 
 
 class ModelBase:
