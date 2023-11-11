@@ -8,17 +8,21 @@ from game.view import router as GameRouter
 from load_data import load_cards, populate_db_test
 from model_base import initialize_database
 from player.view import router as PlayerRouter
+from ws.view import router as WsRouter
 
 
 app = FastAPI()
 app.include_router(CardsRouter)
 app.include_router(GameRouter)
 app.include_router(PlayerRouter)
+app.include_router(WsRouter)
+
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:5173'],  # Add the origins you want to allow
-    allow_methods=['GET', 'POST', 'PUT', 'DELETE'],  # Add the HTTP methods you want to allow
+    allow_origins=['*'],  # Add the origins you want to allow
+    allow_methods=['*'],  # Add the HTTP methods you want to allow
     allow_headers=['*']  # You can specify specific headers here or use "*" to allow any
 )
 

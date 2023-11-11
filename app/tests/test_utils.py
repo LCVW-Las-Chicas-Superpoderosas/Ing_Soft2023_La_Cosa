@@ -238,7 +238,7 @@ def create_data_cards_given():
 
         game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
             cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
-            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[277, 278, 279, 280]')
+            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[125, 126, 127, 128]')
 
         commit()
     except Exception:
@@ -270,7 +270,7 @@ def create_data_cards_given2():
 
         game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
             cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
-            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[269, 270, 271, 272]')
+            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[117, 118, 119, 120]')
 
         commit()
     except Exception:
@@ -302,7 +302,29 @@ def create_data_cards_given3():
 
     game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
         cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
-        the_thing=player2.id, min_players=4, max_players=4, status=0, deck='[273, 274, 275, 276]')
+        the_thing=player2.id, min_players=4, max_players=4, status=0, deck='[121, 122, 123, 124]')
+    commit()
+
+    return [card, card1, card2, card3], chat, [player1, player2, player3, player4], game
+
+
+def create_data_cards_for_refill():
+    card = model_base.add_record(Card, name='create_data_started_game_card',
+    card_token='imj4.png', type=CardType.PANIC.value)
+    card1 = model_base.add_record(Card, name='La Cosa', card_token='imj1.png', type=CardType.IT.value)
+    card2 = model_base.add_record(Card, name='Atras', card_token='imj2.png', type=CardType.STAY_AWAY.value)
+    card3 = model_base.add_record(Card, name='Juan', card_token='imj3.png', type=CardType.STAY_AWAY.value)
+    chat = model_base.add_record(Chat)
+
+    player1 = model_base.add_record(Player, name='create_data_started_game_1', cards={card, card1, card2, card3})
+    player2 = model_base.add_record(Player, name='create_data_started_game_2', cards={card, card1, card2, card3})
+    player3 = model_base.add_record(Player, name='create_data_started_game_3', cards={card, card1, card2, card3})
+    player4 = model_base.add_record(Player, name='create_data_started_game_4', cards={card, card1, card2, card3})
+    commit()
+
+    game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
+        cards={card, card1, card2, card3}, players=[player1, player2, player3, player4], host=player1.id,
+        the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[]', discard_pile='[129, 130, 131, 132]')
     commit()
 
     return [card, card1, card2, card3], chat, [player1, player2, player3, player4], game

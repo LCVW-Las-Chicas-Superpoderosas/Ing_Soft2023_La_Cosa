@@ -8,7 +8,6 @@ from player.models import Player
 from pony.orm import db_session
 from pydantic import BaseModel
 
-
 router = APIRouter()
 MODEL_BASE = ModelBase()
 
@@ -21,7 +20,7 @@ class PlayCardRequest(BaseModel):
 
 
 # make target_user optional and None by default
-def _apply_effect(user, card, target_user = None):
+def _apply_effect(user, card, target_user=None):
     # Check if the card is in the user's hand
     if card not in user.cards:
         raise HTTPException(status_code=400, detail=f"Card {card.name} is not in the user's hand")
@@ -47,7 +46,7 @@ def _apply_effect(user, card, target_user = None):
 
     if effect is None:
         raise HTTPException(status_code=400, detail=f'Card {card.name} effect not found')
-   
+
     # If the effect is not specific to a target user, apply it to the user who played the card
     if target_user is None:
         effect_status = effect(user.id)
@@ -77,6 +76,47 @@ def _apply_effect(user, card, target_user = None):
     }
 
 
+def _validate_play(card_token, id_player, target_id):
+    user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
+    clockwise = user.game.clockwise
+    adjascent_players = user.game.get_adjascent_players()
+    left_player = adjascent_players[0]
+    right_player = adjascent_players[1]
+
+    # extract number from card token string, e.g., img48.jpg -> 48
+    card_token = int(card_token[3:-4])
+
+
+    '''
+    [22, 26]: flame torch
+    [27, 29]: analysis
+    [32, 39]: suspicion
+    ''' 
+    if  22 <= card_token <= 39:
+        if target_id not in adjascent_players:
+            raise HTTPException(status_code=400, detail='Target user is not adjacent to the user')
+
+    '''
+    [67, 70]: scary
+    [74, 77]: no, thanks!
+    [78, 80]: you failed! 
+    '''
+    if (67 <= card_token <= 70) or (74 <= card_token <= 80):
+        if (clockwise and target_id != left_player) or (not clockwise and target_id != right_player):
+            raise HTTPException(status_code=400, detail='Target user should be the next player in the turn')
+
+    '''
+    [40, 42]: whisky
+    [48, 49]: watch your back
+    '''
+    if (40 <= card_token <= 42) or (48 <= card_token <= 49):
+        if target_id >= 0:
+            # "the player itself" means the card is supposed to be played on the user who played it
+            # OR its a global effect
+            raise HTTPException(status_code=400, detail='Target user is not the player itself')
+
+
+
 @router.post('/hand/play/')
 def play_card(request_body: PlayCardRequest):
     card_token = request_body.card_token
@@ -84,6 +124,9 @@ def play_card(request_body: PlayCardRequest):
     target_id = request_body.target_id
 
     with db_session:
+        
+        _validate_play(card_token, id_player, target_id)
+
         card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
 
         # Check if the card exists

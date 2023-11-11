@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import IntEnum
 
 from model_base import db_session, Models, ModelBase
@@ -21,7 +20,6 @@ class Game(Models.Entity):
     name = Required(str, unique=True, index=True)
     status = Required(GameStatus, default=GameStatus.WAITING.value)
     password = Optional(str, nullable=True)
-    created_at = Required(datetime, default=datetime.utcnow)
     host = Required(int)  # Player_id of the host
     the_thing = Optional(int, nullable=True)  # Player_id of the thing
     chats = Required('Chat')
@@ -83,6 +81,30 @@ class Game(Models.Entity):
                     break
 
         return self.current_turn
+
+
+    def get_adjascent_players(self):
+        # get the current player
+        player = self.players.filter(my_position=self.get_turns()).first()
+
+        # get the players that are alive and are adjascent to the current player
+        # first get the alive players 
+        alive_players = self.players.filter(is_alive=True)
+        # filter the players that are adjascent to the current player, its a circular table
+        # so the adjascent players are the next and previous players
+        if(player.my_position == 0):
+            left = alive_players.filter(my_position=len(self.players)-1).first()
+            right = alive_players.filter(my_position=player.my_position+1).first()
+        elif(player.my_position == len(self.players)-1):
+            left = alive_players.filter(my_position=player.my_position-1).first()
+            right = alive_players.filter(my_position=0).first()
+        else:
+            left = alive_players.filter(my_position=player.my_position-1).first()
+            right = alive_players.filter(my_position=player.my_position+1).first()
+
+        return [left.id, right.id]
+        
+
 
     def check_turn(self, user_position):
         return user_position == self.get_turns()
@@ -156,6 +178,9 @@ class Game(Models.Entity):
 
         # List -> Json List
         self.discard_pile = json.dumps(discard_pile_list)
+
+    def empty_discard_pile(self):
+        self.discard_pile = '[]'
 
     def get_deck(self):
         # Convert the JSON list into a python list
@@ -235,8 +260,8 @@ class Game(Models.Entity):
         infected_cards = [card for card in self.cards if card.type == 2]
         left_over_stayaway_cards = [
             card for card in all_cards if
-            card not in (initial_deck_shuffle or infected_cards) and
-            card.type != 0
+            card not in (initial_deck_shuffle) and
+            card.type != 0 and card.type != 2
         ]
 
         # Repartir 4 cartas a cada jugador

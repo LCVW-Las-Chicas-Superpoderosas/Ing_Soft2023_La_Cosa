@@ -287,7 +287,7 @@ def start_game(game_data: GameStartRequest):
         # Set game status
         game.status = GameStatus.STARTED.value
 
-        # Fetch first card id in deck 
+        # Fetch first card id in deck
         first_card_id = game.get_deck()[0]
 
         # Fetch first card
@@ -386,11 +386,11 @@ def put_hand(hand_request: HandRequest):
             )
 
         # Get card from deck
-        if player.game.next_card_in_deck() is None:
+        if player.game.deck == '[]':
             sort_discard_pile = player.game.get_discard_pile()
             random.shuffle(sort_discard_pile)
-
             player.game.deck = json.dumps(sort_discard_pile)
+            player.game.empty_discard_pile()
 
         card = player.game.next_card_in_deck()
         player.game.delete_first_card_in_deck()
@@ -405,10 +405,11 @@ def put_hand(hand_request: HandRequest):
         player.cards.add(card)
 
         # Get next_card_type
-        if player.game.next_card_in_deck() is None:
+        if player.game.deck == '[]':
             sort_discard_pile = player.game.get_discard_pile()
             random.shuffle(sort_discard_pile)
-            player.game.deck = sort_discard_pile
+            player.game.deck = json.dumps(sort_discard_pile)
+            player.game.empty_discard_pile()
 
         next_card = player.game.next_card_in_deck()
         next_card_type = next_card.type
