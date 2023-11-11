@@ -194,8 +194,8 @@ async def card_exchange(websocket: WebSocket, id_player: int):
             try:
                 # Parse the incoming JSON message and validate it
                 request_data = WSRequest.parse_raw(message)
-
-                if request_data.content.type == 'exchange_offert':
+                
+                if request_data.content and request_data.content.type == 'exchange_offert':
                     with db_session:
                         card = mb.get_first_record_by_value(
                             Card, card_token=request_data.content.card_token)
@@ -228,7 +228,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     'type': 'get_result',
                                 }}))
                         target.add_card(card)
-                elif request_data.content.type == 'result':
+                elif request_data.content and request_data.content.type == 'result':
                     with db_session:
                         player = mb.get_first_record_by_value(Player, id=id_player)
 
@@ -245,7 +245,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     'hand': player.get_hand()
                                 }}))
 
-                elif request_data.content.type == 'exchange':
+                elif request_data.content and request_data.content.type == 'exchange':
                     with db_session:
                         card = mb.get_first_record_by_value(
                             Card, card_token=request_data.content.card_token)
@@ -293,14 +293,14 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     'status_code': 200,
                                     'detail': 'Target player need to exchange',
                                     'data': {
-                                        'type': 'exchange_offer',
+                                        'type': 'exchange_offert',
                                         'attacker_id': player.id,
                                         'attacker_name': player.name
 
                                     }}))
                             target.add_card(card)
 
-                elif request_data.content.type == 'defend':
+                elif request_data.content and request_data.content.type == 'defend':
                     with db_session:
                         player = mb.get_first_record_by_value(Player, id=id_player)
                         if not player.is_alive:
