@@ -1,17 +1,17 @@
 import json
 import unittest
 
-from card.effects_mapping import flame_torch
+from card.effects_mapping import flame_torch, suspicion
+from card.models import Card
 from card.view import router
 from fastapi import HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.testclient import TestClient
 from mock import patch
-from model_base import initialize_database, ModelBase
+from model_base import ModelBase, initialize_database
 from player.models import Player
-from pony.orm import db_session, commit
+from pony.orm import commit, db_session
 from tests.test_utils import create_data_test, delete_data_full_lobby
-
 
 client = TestClient(router)
 
@@ -21,6 +21,8 @@ class TestPlayCard(unittest.TestCase):
     def setUpClass(self):
         initialize_database()
 
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_play_card_invalid_card_token(self):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -46,6 +48,8 @@ class TestPlayCard(unittest.TestCase):
         with self.assertRaises(RequestValidationError):
             client.post('/hand/play/', data=json.dumps(payload))
 
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_play_card_user_not_found(self):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -61,6 +65,8 @@ class TestPlayCard(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 400)
         self.assertEqual(context.exception.detail, 'User 999 not found')
 
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_play_card_game_not_playing(self):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -76,7 +82,8 @@ class TestPlayCard(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 400)
         self.assertEqual(context.exception.detail, 'Target user not found')
 
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: True})
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_play_card_with_valid_data(self, *args, **kwargs):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -97,7 +104,8 @@ class TestPlayCard(unittest.TestCase):
         self.assertFalse(data['data']['the_thing_win'])
         self.assertFalse(data['data']['the_humans_win'])
 
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: True})
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_human_win_with_valid_data(self, *args, **kwargs):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -119,7 +127,8 @@ class TestPlayCard(unittest.TestCase):
         self.assertFalse(data['data']['the_thing_win'])
         self.assertTrue(data['data']['the_humans_win'])
 
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: True})
+    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_thing_win_with_valid_data(self, *args, **kwargs):
         with db_session:
             card, chat, player, game = create_data_test()
@@ -152,12 +161,23 @@ class TestCards(unittest.TestCase):
         with db_session:
             player = ModelBase().add_record(Player, name='flame_torch_player', my_position=0)
             commit()
-            status = flame_torch(player.id)
-        self.assertTrue(status)
+            result = flame_torch(player.id)
+        self.assertTrue(result["status"])
         self.assertFalse(player.is_alive)
 
     def test_flame_torch_failed(self, *args, **kwargs):
         with db_session:
-            status = flame_torch(999)
+            result = flame_torch(999)
 
-        self.assertFalse(status)
+        self.assertFalse(result["status"])
+
+    def test_suspicion(self, *args, **kwargs):
+        with db_session:
+            player = ModelBase().add_record(Player, name='suspicion_player', my_position=0)
+            # create a Set of instances of Card
+            player2 = ModelBase().add_record(Player, name='suspicion_player2', my_position=1)
+            card =  ModelBase().get_first_record_by_value(Card, card_token='img22.jpg')
+            player2.cards = [card]
+            commit()
+            result = suspicion(player2.id)
+        self.assertTrue(result["status"])
