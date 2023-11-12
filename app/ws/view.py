@@ -218,7 +218,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                         'attacker_id': player.id,
                                         'attacker_name': player.name,
                                         'card_being_played': card.name,
-                                        'player_is_underattack': True
+                                        'under_attack': True
                                     }
                                 }))
                         else:
@@ -253,7 +253,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'data': {
                                         'type': 'defense',
                                         'hand': player.get_hand(),
-                                        'player_is_underattack': False
+                                        'under_attack': False
 
                                     }}))
                         else:
@@ -265,7 +265,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'data': {
                                         'type': 'defense',
                                         'hand': target.get_hand(),
-                                        'player_is_underattack': False
+                                        'under_attack': False
                                     }
                                 }))
 
