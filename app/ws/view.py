@@ -392,14 +392,17 @@ async def broadcast_chat_message(request_data):
         chat_message = f'[{datetime.now().strftime("%H:%M:%S")}] {player.name}: {chat_message}'
 
         for connection, conn_id in chatManager.active_connections:
-            await connection.send_text(json.dumps({
-                'status_code': 200,
-                'detail': 'New message received',
-                'data': {
-                    'type': 'chat_message',
-                    'message': chat_message
-                }
-            }))    
+            try:
+                await connection.send_text(json.dumps({
+                    'status_code': 200,
+                    'detail': 'New message received',
+                    'data': {
+                        'type': 'chat_message',
+                        'message': chat_message
+                    }
+                }))  
+            except WebSocketDisconnect:
+                await chatManager.disconnect(connection, conn_id)
 
 
 
@@ -435,7 +438,7 @@ async def chat_endpoint(websocket: WebSocket, id_player: int):
                         }))
 
     except WebSocketDisconnect:
-        chatManager.disconnect(websocket, id_player)
+        await chatManager.disconnect(websocket, id_player)
     except HTTPException as e:
         await websocket.send_text(
             json.dumps({
