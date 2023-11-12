@@ -5,7 +5,8 @@ from pony.orm import PrimaryKey, Optional, Required, Set
 
 
 DEFENSE_EFFECTS = {
-    'lanzallamas': ['Nada de barbacoas!']
+    'lanzallamas': ['Nada de barbacoas!'],
+    'seducción': ['Fallaste!', '¡No, gracias!']
     # add more when u need to do your tickets
 }
 

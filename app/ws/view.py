@@ -146,7 +146,6 @@ async def _play_card(manager, request_data, player, target, card):
             'data': {
                 'type': 'play_card',
                 'hand': player.get_hand(),
-                'effect_result': play_card_result['effect_result'],
                 'the_thing_win': play_card_result['the_thing_win'],
                 'the_humans_win': play_card_result['the_humans_win']
             }
@@ -159,7 +158,6 @@ async def _play_card(manager, request_data, player, target, card):
             'data': {
                 'type': 'play_card',
                 'hand': target.get_hand(),
-                'effect_result': play_card_result['effect_result'],
                 'the_thing_win': play_card_result['the_thing_win'],
                 'the_humans_win': play_card_result['the_humans_win']
             }
@@ -180,6 +178,8 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
             # Parse the incoming JSON message and validate it
             try:
                 request_data = WSRequest.parse_raw(message)
+                if request_data.content.target_id < 0:
+                    request_data.content.target_id = None
             except ValidationError as validation_error:
                 raise HTTPException(status_code=400, detail=validation_error.errors())
 
@@ -196,7 +196,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                     card = mb.get_first_record_by_value(
                         Card, card_token=request_data.content.card_token)
                     if card is None:
-                        raise HTTPException(status_code=400, detail='Card not found buddy')
+                        raise HTTPException(status_code=400, detail='Card not found, buddy')
 
                     defense_cards = target.can_defend(card.name)
 
@@ -213,11 +213,12 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'attacker_id': player.id,
                                     'attacker_name': player.name,
                                     'card_being_played': card.name
+                                    'player_is_underattack': True
                                 }
                             }))
                     else:
                         player.last_card_token_played = request_data.content.card_token
-                        await _play_card(manager, request_data, player, target, card)
+                        await  (manager, request_data, player, target, card)
 
             elif request_data.content.type == 'defense':
                 with db_session:
@@ -249,6 +250,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'data': {
                                         'type': 'defense',
                                         'hand': player.get_hand(),
+                                        'player_is_underattack': False
 
                                     }}))
                         else:
@@ -260,6 +262,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'data': {
                                         'type': 'defense',
                                         'hand': target.get_hand(),
+                                        'player_is_underattack': False
                                     }
                                 }))
 

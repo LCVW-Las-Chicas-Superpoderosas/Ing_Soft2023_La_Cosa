@@ -106,9 +106,33 @@ def suspicion(target_id):
         }
 
 
+def seduction(target_id):
+    try:
+        with db_session:
+            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
+            # first get the Set of cards from the target player
+            cards_set = target_user.cards
+            # then get a random card from that Set
+            random_card = random.choice(list(cards_set))
+
+            # create a dict with status
+            # and data the card name
+            return {
+                'status': SUCCESS,
+                'data': random_card.card_token
+            }
+
+    except Exception as e:
+        print(e)
+        return {
+            'status': FAIL
+        }
+
+
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
     'vigila tus espaldas': watch_your_back,
     'cambio de lugar!': swap_places,
-    'sospecha': suspicion
+    'sospecha': suspicion,
+    'seduccion': seduction
 }

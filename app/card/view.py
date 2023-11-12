@@ -68,7 +68,6 @@ def _apply_effect(user, card, target_user=None):
         'status_code': 200,
         'detail': f'Card {card.name} played successfully',
         'data': {
-            'effect_result': effect_result['data'],
             'user': user_data,
             'target_user': target_data,
             'the_thing_win': game.validate_the_thing_win(),
