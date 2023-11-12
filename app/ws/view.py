@@ -147,7 +147,8 @@ async def manage_play_card(manager, request_data, player, target, card):
                 'type': 'play_card',
                 'hand': player.get_hand(),
                 'the_thing_win': play_card_result['the_thing_win'],
-                'the_humans_win': play_card_result['the_humans_win']
+                'the_humans_win': play_card_result['the_humans_win'],
+                'effect_data': play_card_result['effect_data']
             }
         }))
     if player is not None:
@@ -160,7 +161,8 @@ async def manage_play_card(manager, request_data, player, target, card):
                     'type': 'play_card',
                     'hand': target.get_hand(),
                     'the_thing_win': play_card_result['the_thing_win'],
-                    'the_humans_win': play_card_result['the_humans_win']
+                    'the_humans_win': play_card_result['the_humans_win'],
+                    'effect_data': play_card_result['effect_data']
                 }
             }))
 

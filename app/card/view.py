@@ -71,7 +71,8 @@ def _apply_effect(user, card, target_user=None):
             'user': user_data,
             'target_user': target_data,
             'the_thing_win': game.validate_the_thing_win(),
-            'the_humans_win': game.validate_humans_win()
+            'the_humans_win': game.validate_humans_win(),
+            'effect_data': effect_result.get('data', None)
         }
     }
 
