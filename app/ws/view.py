@@ -13,6 +13,7 @@ from game.view import _player_exists
 import asyncio
 
 MODEL_BASE = ModelBase()
+manager = ConnectionManager()
 
 
 class Content(BaseModel):
@@ -168,12 +169,10 @@ async def _play_card(manager, request_data, player, target, card):
 # idk why but if i tried to add another router is not detected xd
 @router.websocket('/ws/hand_play')
 async def hand_play_endpoint(websocket: WebSocket, id_player: int):
-    manager = ConnectionManager()
     mb = ModelBase()
 
     await websocket.accept()
     manager.active_connections.append((websocket, id_player))
-
     try:
         while True:
             # Receive a message from the WebSocket client
@@ -276,7 +275,6 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
 
 @router.websocket('/ws/game_status')
 async def game_status_ws(websocket: WebSocket):
-    manager = ConnectionManager()
     await websocket.accept()
     manager.active_connections.append((websocket, None))
     request_data = None
@@ -312,7 +310,6 @@ async def game_status_ws(websocket: WebSocket):
 async def card_exchange(websocket: WebSocket, id_player: int):
     mb = ModelBase()
 
-    manager = ConnectionManager()
     await websocket.accept()
     manager.active_connections.append((websocket, id_player))
 
@@ -322,7 +319,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
             try:
                 # Parse the incoming JSON message and validate it
                 request_data = WSRequest.parse_raw(message)
-                
+
                 if request_data.content and request_data.content.type == 'exchange_offert':
                     with db_session:
                         card = mb.get_first_record_by_value(
