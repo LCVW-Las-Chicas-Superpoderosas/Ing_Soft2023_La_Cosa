@@ -252,3 +252,24 @@ class TestWs(unittest.TestCase):
 
         self.assertEqual(response['status_code'], 200)
         self.assertEqual(response['data']['type'], 'result')
+
+    def test_chat_with_valid_message(self, *args, **kwargs):
+        with db_session:
+            card, chat, player, game = create_data_test()
+            commit()
+
+            payload = {
+                'content': {
+                    'type': 'chat_message',
+                    'id_player': player[0].id,
+                    'chat_message': 'test message'
+                }
+            }
+
+            with client.websocket_connect('/ws/chat', params={'id_player': player[0].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                response = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(response['status_code'], 200)
+        self.assertEqual(response['detail'], 'New message received')
