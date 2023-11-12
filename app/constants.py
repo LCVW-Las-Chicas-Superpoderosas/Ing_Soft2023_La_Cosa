@@ -1,3 +1,3 @@
 DATABASE_URL = 'localhost'
-MYSQL_USER = 'user'
-MYSQL_PASS = 'password'
+MYSQL_USER = 'YOUR USER'
+MYSQL_PASS = 'YOUR PASSWORD'
