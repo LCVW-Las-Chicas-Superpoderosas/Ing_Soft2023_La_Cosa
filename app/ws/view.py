@@ -135,7 +135,7 @@ async def play_card(request_data):
             return _apply_effect(user, card)
 
 
-async def _play_card(manager, request_data, player, target, card):
+async def manage_play_card(manager, request_data, player, target, card):
     play_card_result = await play_card(request_data.content)
     play_card_result = play_card_result['data']
     await manager.send_to(
@@ -222,10 +222,10 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     }
                                 }))
                         else:
-                            await _play_card(manager, request_data, player, target, card)
+                            await manage_play_card(manager, request_data, player, target, card)
                     else:
                         player.last_card_token_played = request_data.content.card_token
-                        await _play_card(manager, request_data, player, target, card)
+                        await manage_play_card(manager, request_data, player, target, card)
 
             elif request_data.content.type == 'defense':
                 with db_session:
@@ -240,7 +240,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                         raise HTTPException(status_code=400, detail='Card not found buddy')
                     if request_data.content.card_token is None:
                         request_data.content.card_toke = target.last_card_token_played
-                        await _play_card(manager, request_data, target, player, card)
+                        await manage_play_card(manager, request_data, target, player, card)
 
                     else:
                         if player.check_card_in_hand(card.id):
@@ -270,7 +270,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                 }))
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket, id_player)
+        await manager.disconnect(websocket, id_player)
     except HTTPException as e:
         await websocket.send_text(
             json.dumps({
@@ -472,7 +472,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                     }))
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket, id_player)
+        await manager.disconnect(websocket, id_player)
 
     except HTTPException as e:
         await websocket.send_text(
@@ -551,7 +551,7 @@ async def chat_endpoint(websocket: WebSocket, id_player: int):
                         }))
 
     except WebSocketDisconnect:
-        chatManager.disconnect(websocket, id_player)
+        await chatManager.disconnect(websocket, id_player)
     except HTTPException as e:
         await websocket.send_text(
             json.dumps({
