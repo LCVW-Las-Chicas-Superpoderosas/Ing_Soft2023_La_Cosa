@@ -17,9 +17,9 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections = []
 
-    def disconnect(self, websocket: WebSocket, player_id: int = None):
+    async def disconnect(self, websocket: WebSocket, player_id: int = None):
         self.active_connections.remove((websocket, player_id))
-        websocket.close()
+        await websocket.close()
 
     async def broadcast(self, message: str):
         for connection in self.active_connections:
