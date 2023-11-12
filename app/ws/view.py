@@ -242,15 +242,19 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'status_code': 200,
                                     'detail': 'Target player defend succesfully',
                                     'data': {
-                                        'type': 'get_result',
+                                        'type': 'defend',
+                                        'hand': player.get_hand(),
+
                                     }}))
                         else:
-                            await websocket.send_text(
-                                json.dumps({
+                            await manager.send_to(
+                                target.id,
+                                data=json.dumps({
                                     'status_code': 400,
                                     'detail': 'Player doesnt have that card',
                                     'data': {
-                                        'type': 'defend'
+                                        'type': 'defend',
+                                        'hand': target.get_hand(),
                                     }
                                 }))
 
