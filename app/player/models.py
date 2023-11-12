@@ -4,6 +4,12 @@ from model_base import Models
 from pony.orm import PrimaryKey, Optional, Required, Set
 
 
+DEFENSE_EFFECTS = {
+    'lanzallamas': ['Nada de barbacoas!']
+    # add more when u need to do your tickets
+}
+
+
 class Player(Models.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str, unique=True, index=True)
@@ -12,6 +18,7 @@ class Player(Models.Entity):
     is_alive = Required(bool, default=True)
     infected = Optional(bool, default=False)
     my_position = Optional(int)
+    last_card_token_played = Optional(str)
 
     def is_in_game(self, game_id):
         if self.game is None:
@@ -35,7 +42,15 @@ class Player(Models.Entity):
         for name in defense_cards:
             c = self.cards.select().filter(name=name).first()
             if c is not None:
-                cards.append(c)
+                cards.append(c.card_token)
+        return cards
+
+    def can_defend(self, card_name):
+        cards = []
+        for name in DEFENSE_EFFECTS[card_name.lower()]:
+            c = self.cards.select().filter(name=name).first()
+            if c is not None:
+                cards.append(c.card_token)
         return cards
 
     def get_hand(self):
