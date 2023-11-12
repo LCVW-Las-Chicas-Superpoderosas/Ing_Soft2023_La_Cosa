@@ -212,7 +212,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'defense_cards': defense_cards,
                                     'attacker_id': player.id,
                                     'attacker_name': player.name,
-                                    'card_being_played': card.name
+                                    'card_being_played': card.name,
                                     'player_is_underattack': True
                                 }
                             }))
