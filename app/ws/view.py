@@ -1,16 +1,16 @@
+import asyncio
+import json
+from datetime import datetime
+
 from card.models import Card
 from card.view import _apply_effect, router
-from fastapi import WebSocket, WebSocketDisconnect
-from fastapi import HTTPException
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from game.models import GameStatus
-from model_base import ModelBase
+from game.view import _player_exists
+from model_base import ConnectionManager, ModelBase
 from player.models import Player
-from model_base import ConnectionManager
 from pony.orm import db_session
 from pydantic import BaseModel, ValidationError
-import json
-from game.view import _player_exists
-import asyncio
 
 MODEL_BASE = ModelBase()
 
@@ -20,7 +20,7 @@ class Content(BaseModel):
     card_token: str = None
     id_player: int = None
     target_id: int = None  # Default value is None
-    # agregar chat_message y message
+    chat_message: str = None
 
 
 class WSRequest(BaseModel):
@@ -358,6 +358,84 @@ async def card_exchange(websocket: WebSocket, id_player: int):
     except WebSocketDisconnect:
         manager.disconnect(websocket, id_player)
 
+    except HTTPException as e:
+        await websocket.send_text(
+            json.dumps({
+                'status_code': e.status_code,
+                'detail': e.detail
+            }))
+
+chatManager = ConnectionManager()
+
+async def broadcast_chat_message(request_data):
+    chat_message = request_data.chat_message
+    id_player = request_data.id_player
+
+    with db_session:
+        # Check if the player exists
+        player = _player_exists(id_player)
+        # Get the game
+        game = player.game
+
+        # If player is not part of a game, return error
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Player is not part of a game.')
+        
+        # If the message is empty, don't send it
+        if chat_message == '':
+            raise HTTPException(
+                status_code=400,
+                detail='Message is empty.')
+
+        chat_message = f'[{datetime.now().strftime("%H:%M:%S")}] {player.name}: {chat_message}'
+
+        for connection, conn_id in chatManager.active_connections:
+            await connection.send_text(json.dumps({
+                'status_code': 200,
+                'detail': 'New message received',
+                'data': {
+                    'type': 'chat_message',
+                    'message': chat_message
+                }
+            }))    
+
+
+
+@router.websocket('/ws/chat')
+async def chat_endpoint(websocket: WebSocket, id_player: int):
+    await websocket.accept()
+    chatManager.active_connections.append((websocket, id_player))
+    request_data = None
+    try:
+        while True:
+            try:
+                # use asyncio to wait for the message
+                message = await asyncio.wait_for(websocket.receive_text(), timeout=1100) 
+                try:
+                    # Parse the incoming JSON message and validate it
+                    request_data = WSRequest.parse_raw(message)
+                    if request_data.content.type == 'chat_message':
+                        await broadcast_chat_message(request_data.content)
+                except ValidationError as validation_error:
+                    await websocket.send_text(
+                        json.dumps({
+                            'status_code': 400,
+                            'detail': validation_error.errors()
+                        }))
+            except asyncio.TimeoutError:
+                if request_data is not None:
+                    await broadcast_chat_message(request_data.content)
+                else:
+                    await websocket.send_text(
+                        json.dumps({
+                            'status_code': 400,
+                            'detail': 'Message could not be sent.'
+                        }))
+
+    except WebSocketDisconnect:
+        chatManager.disconnect(websocket, id_player)
     except HTTPException as e:
         await websocket.send_text(
             json.dumps({
