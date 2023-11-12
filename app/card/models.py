@@ -5,6 +5,9 @@ from model_base import Models
 from pony.orm import Optional, PrimaryKey, Required, Set
 
 
+EXCHANGE_CARDS = ['seduccion']
+
+
 class CardType(IntEnum):
     OTHER = -1
     PANIC = 0
@@ -21,3 +24,6 @@ class Card(Models.Entity):
     game = Set('Game')  # Define the reverse attribute as "cards"
     player = Set('Player')  # Define the reverse attribute as "cards"
     number = Optional(int)  # Number 0 is only for IT card, Null is for not playable cards
+
+    def is_exchange(self):
+        return self.name.lower() in EXCHANGE_CARDS
