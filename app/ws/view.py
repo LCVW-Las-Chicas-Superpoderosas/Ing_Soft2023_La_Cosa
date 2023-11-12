@@ -188,6 +188,12 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                 with db_session:
                     target = _player_exists(request_data.content.target_id)
                     player = _player_exists(id_player)
+
+                    if not target.is_alive:
+                        raise HTTPException(status_code=400, detail='Target is mad dead')
+                    if not player.is_alive:
+                        raise HTTPException(status_code=400, detail='Player is mad dead')
+
                     card = mb.get_first_record_by_value(
                         Card, card_token=request_data.content.card_token)
                     if card is None:
@@ -203,7 +209,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                 'status_code': 200,
                                 'detail': 'Target player can defend',
                                 'data': {
-                                    'type': 'defend',
+                                    'type': 'defense',
                                     'defense_cards': defense_cards,
                                     'attacker_id': player.id,
                                     'attacker_name': player.name,
@@ -242,7 +248,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'status_code': 200,
                                     'detail': 'Target player defend succesfully',
                                     'data': {
-                                        'type': 'defend',
+                                        'type': 'defense',
                                         'hand': player.get_hand(),
 
                                     }}))
@@ -253,7 +259,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     'status_code': 400,
                                     'detail': 'Player doesnt have that card',
                                     'data': {
-                                        'type': 'defend',
+                                        'type': 'defense',
                                         'hand': target.get_hand(),
                                     }
                                 }))
