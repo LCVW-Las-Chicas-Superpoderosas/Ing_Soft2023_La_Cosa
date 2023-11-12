@@ -150,18 +150,19 @@ async def _play_card(manager, request_data, player, target, card):
                 'the_humans_win': play_card_result['the_humans_win']
             }
         }))
-    await manager.send_to(
-        target.id,
-        data=json.dumps({
-            'status_code': 200,
-            'detail': f'Card {card.name}played successfully defend',
-            'data': {
-                'type': 'play_card',
-                'hand': target.get_hand(),
-                'the_thing_win': play_card_result['the_thing_win'],
-                'the_humans_win': play_card_result['the_humans_win']
-            }
-        }))
+    if player is not None:
+        await manager.send_to(
+            target.id,
+            data=json.dumps({
+                'status_code': 200,
+                'detail': f'Card {card.name}played successfully defend',
+                'data': {
+                    'type': 'play_card',
+                    'hand': target.get_hand(),
+                    'the_thing_win': play_card_result['the_thing_win'],
+                    'the_humans_win': play_card_result['the_humans_win']
+                }
+            }))
 
 
 # idk why but if i tried to add another router is not detected xd
@@ -185,11 +186,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
 
             if request_data.content.type == 'play_card':
                 with db_session:
-                    target = _player_exists(request_data.content.target_id)
                     player = _player_exists(id_player)
-
-                    if not target.is_alive:
-                        raise HTTPException(status_code=400, detail='Target is mad dead')
                     if not player.is_alive:
                         raise HTTPException(status_code=400, detail='Player is mad dead')
 
@@ -198,27 +195,37 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                     if card is None:
                         raise HTTPException(status_code=400, detail='Card not found, buddy')
 
-                    defense_cards = target.can_defend(card.name)
+                    player.last_card_token_played = request_data.content.card_token
 
-                    if len(defense_cards) != 0:
-                        # Len not 0 aka tiene defens
-                        await manager.send_to(
-                            target.id,
-                            data=json.dumps({
-                                'status_code': 200,
-                                'detail': 'Target player can defend',
-                                'data': {
-                                    'type': 'defense',
-                                    'defense_cards': defense_cards,
-                                    'attacker_id': player.id,
-                                    'attacker_name': player.name,
-                                    'card_being_played': card.name,
-                                    'player_is_underattack': True
-                                }
-                            }))
+                    if request_data.content.target_id is not None:
+                        target = _player_exists(request_data.content.target_id)
+
+                        if not target.is_alive:
+                            raise HTTPException(status_code=400, detail='Target is mad dead')
+
+                        defense_cards = target.can_defend(card.name)
+
+                        if len(defense_cards) != 0:
+                            # Len not 0 aka tiene defens
+                            await manager.send_to(
+                                target.id,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': 'Target player can defend',
+                                    'data': {
+                                        'type': 'defense',
+                                        'defense_cards': defense_cards,
+                                        'attacker_id': player.id,
+                                        'attacker_name': player.name,
+                                        'card_being_played': card.name,
+                                        'player_is_underattack': True
+                                    }
+                                }))
+                        else:
+                            await _play_card(manager, request_data, player, target, card)
                     else:
                         player.last_card_token_played = request_data.content.card_token
-                        await  (manager, request_data, player, target, card)
+                        await _play_card(manager, request_data, player, target, card)
 
             elif request_data.content.type == 'defense':
                 with db_session:
@@ -226,20 +233,16 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                     if not player.is_alive:
                         raise HTTPException(status_code=400, detail='Player is mad dead')
 
+                    card = mb.get_first_record_by_value(
+                        Card, card_token=request_data.content.card_token)
+
+                    if card is None:
+                        raise HTTPException(status_code=400, detail='Card not found buddy')
                     if request_data.content.card_token is None:
                         request_data.content.card_toke = target.last_card_token_played
-                        card = mb.get_first_record_by_value(
-                            Card, card_token=request_data.content.card_token)
-                        if card is None:
-                            raise HTTPException(status_code=400, detail='Card not found buddy')
-                        _play_card(manager, request_data, target, player, card)
+                        await _play_card(manager, request_data, target, player, card)
 
                     else:
-                        card = mb.get_first_record_by_value(
-                            Card, card_token=request_data.content.card_token)
-
-                        if card is None:
-                            raise HTTPException(status_code=400, detail='Card not found buddy')
                         if player.check_card_in_hand(card.id):
                             player.remove_card(card.id)
                             await manager.send_to(
