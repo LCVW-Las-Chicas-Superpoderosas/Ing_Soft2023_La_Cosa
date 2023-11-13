@@ -105,6 +105,104 @@ def suspicion(target_id):
             'status': FAIL
         }
 
+def analysis(target_id):
+    try:
+        with db_session:
+            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
+
+            all_card_tokens = {card.card_token for card in target_user.cards}
+
+            return {
+                'status': SUCCESS,
+                'data': all_card_tokens
+            }
+    except Exception as e:
+        print(e)
+        return{
+            'status': FAIL
+        }
+    
+def im_good_here(player_id):
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+            if next_card.type == 1:
+                player.add_card(next_card)
+                no_stay_away_card = False
+                game.delete_first_card_in_deck()
+            else:
+                game.add_card_to_discard_pile(next_card.id)
+                game.delete_first_card_in_deck()
+            
+            return {
+                'status': SUCCESS
+            }
+    except Exception as e:
+        print(e)
+        return {
+            'status': FAIL
+        }
+
+def no_thanks(player_id):
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+            if next_card.type == 1:
+                player.add_card(next_card)
+                no_stay_away_card = False
+                game.delete_first_card_in_deck()
+            else:
+                game.add_card_to_discard_pile(next_card.id)
+                game.delete_first_card_in_deck()
+            
+            return {
+                'status': SUCCESS
+            }
+    except Exception as e:
+        print(e)
+        return {
+            'status': FAIL
+        }
+
+def you_failed(player_id):
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+            if next_card.type == 1:
+                player.add_card(next_card)
+                no_stay_away_card = False
+                game.delete_first_card_in_deck()
+            else:
+                game.add_card_to_discard_pile(next_card.id)
+                game.delete_first_card_in_deck()
+            
+            return {
+                'status': SUCCESS
+            }
+    except Exception as e:
+        print(e)
+        return {
+            'status': FAIL
+        }
+
 
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
@@ -119,4 +217,7 @@ DEFENSE_CARDS_EFFECTS = {
     # If none the card only neglect the acction of the cards and do anything else
     'nada de barbacoas!': None,
     'aterrador': None,
+    'fallaste': you_failed,
+    'estoy bien aqui': im_good_here,
+    'no, gracias': no_thanks
 }
