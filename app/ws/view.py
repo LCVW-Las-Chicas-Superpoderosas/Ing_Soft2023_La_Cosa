@@ -187,6 +187,8 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                         raise HTTPException(status_code=400, detail='Card not found, buddy')
 
                     player.last_card_token_played = request_data.content.card_token
+                    player.remove_card(card.id)
+                    commit()
 
                     if request_data.content.target_id is not None:
                         target = _player_exists(request_data.content.target_id)
@@ -216,7 +218,6 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             is_exchange = card.is_exchange()
                             if is_exchange:
                                 # removemos la carta que quiere dar ya que no se pudo defender
-                                player.remove_card(card.id)
                                 await manager.send_to(
                                     id_player,
                                     data=json.dumps({
@@ -260,8 +261,9 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                         if card is None:
                             raise HTTPException(status_code=400, detail='Card not found buddy')
 
-                        player.remove_card(card.id)
                         if player.check_card_in_hand(card.id):
+                            player.remove_card(card.id)
+                            commit()
                             await manager.send_to(
                                 id_player,
                                 data=json.dumps({
@@ -274,7 +276,6 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     }}))
                             await manager.send_to(
                                 target.id,
-
                                 data=json.dumps({
                                     'status_code': 200,
                                     'detail': 'Target player defend succesfully',
@@ -358,7 +359,7 @@ async def game_status_ws(websocket: WebSocket):
     try:
         while True:
             try:
-                message = await asyncio.wait_for(websocket.receive_text(), timeout=3)  # Set a timeout of 3 seconds
+                message = await asyncio.wait_for(websocket.receive_text(), timeout=1)  # Set a timeout of 3 seconds
                 try:
                     # Parse the incoming JSON message and validate it
                     request_data = WSRequest.parse_raw(message)
