@@ -148,11 +148,76 @@ def analysis(target_id):
             'status': FAIL
         }
 
+def im_good_here(player_id):
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+        
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+                card_token = next_card.card_token
+                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
+                if card_token_id <= 88 and card_token_id >= 0:
+                    player.add_card(next_card)
+                    no_stay_away_card = False
+                    game.delete_first_card_in_deck()
+
+                if card_token_id <= 108 and card_token_id >= 89:
+                    game.add_card_to_discard_pile(next_card.id)
+                    game.delete_first_card_in_deck()
+
+            return {
+                'status': SUCCESS,
+            }
+    except Exception as e:
+
+        print(e)
+        return {
+            'status': FAIL
+        }
+    
+def no_thanks(player_id):
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+        
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+                card_token = next_card.card_token
+                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
+                if card_token_id <= 88 and card_token_id >= 0:
+                    player.add_card(next_card)
+                    no_stay_away_card = False
+                    game.delete_first_card_in_deck()
+
+                if card_token_id <= 108 and card_token_id >= 89:
+                    game.add_card_to_discard_pile(next_card.id)
+                    game.delete_first_card_in_deck()
+
+            return {
+                'status': SUCCESS,
+            }
+    except Exception as e:
+
+        print(e)
+        return {
+            'status': FAIL
+        }
+
+
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
     'vigila tus espaldas': watch_your_back,
     'cambio de lugar!': swap_places,
     'sospecha': suspicion,
     'seduccion': seduction,
-    'analisis': analysis
+    'analisis': analysis,
+    'aqui estoy bien': im_good_here,
+    'no, gracias': no_thanks
 }
