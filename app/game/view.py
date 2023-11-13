@@ -622,6 +622,6 @@ def get_top_card(id_game: int = Header(..., key='id-game')):
         'status_code': 200,
         'message': f'top card of {game.id} game',
         'data': {
-            'hand': top_card_type
+            'top_card': top_card_type
         }
     }
