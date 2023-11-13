@@ -23,7 +23,7 @@ class Content(BaseModel):
     id_player: int = None
     target_id: int = None  # Default value is None
     chat_message: str = None
-    do_defense: bool = False
+    do_defense: int = 0
 
 
 class WSRequest(BaseModel):
@@ -309,6 +309,10 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     }
                                 }))
                     else:
+                        card = mb.get_first_record_by_value(
+                            Card, card_token=player.last_card_token_played)
+                        if card is None:
+                            raise HTTPException(status_code=400, detail='Card not found buddy')
                         await manage_play_card(manager, request_data, target, player, card)
 
             elif request_data.content and request_data.content.type == 'exchange_offert':
