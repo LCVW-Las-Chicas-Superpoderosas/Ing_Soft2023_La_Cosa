@@ -103,16 +103,12 @@ async def get_game_info(websocket, request_data):
         }))
 
 
-async def play_card(request_data, card):
-    id_player = request_data.id_player
-    target_id = request_data.target_id
-
+async def play_card(user, target_user, card):
     with db_session:
-        user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
 
         # Check if the user exists
         if user is None:
-            raise HTTPException(status_code=400, detail=f'User {id_player} not found')
+            raise HTTPException(status_code=400, detail=f'Player not found')
 
         if not user.is_alive:
             raise HTTPException(status_code=400, detail=f'User {user.name} is dead')
@@ -120,11 +116,7 @@ async def play_card(request_data, card):
         if user.game.status != GameStatus.STARTED.value:
             raise HTTPException(status_code=400, detail=f'Game {user.game.name} is not in progress')
 
-        if target_id is not None and target_id >= 0:
-            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
-            if target_user is None:
-                raise HTTPException(status_code=400, detail='Target user not found')
-
+        if target_user is not None:
             # Send the response back to the WebSocket client
             return _apply_effect(user, card, target_user)
         else:
@@ -132,8 +124,8 @@ async def play_card(request_data, card):
             return _apply_effect(user, card)
 
 
-async def manage_play_card(manager, request_data, player, target, card):
-    play_card_result = await play_card(request_data.content, card)
+async def manage_play_card(manager, player, target, card):
+    play_card_result = await play_card(player, target, card)
     play_card_result = play_card_result['data']
     await manager.send_to(
         player.id,
@@ -247,10 +239,10 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                 target.add_card(card)
 
                             else:
-                                await manage_play_card(manager, request_data, player, target, card)
+                                await manage_play_card(manager, player, target, card)
                     else:
                         player.last_card_token_played = request_data.content.card_token
-                        await manage_play_card(manager, request_data, player, target, card)
+                        await manage_play_card(manager, player, None, card)
 
             elif request_data.content.type == 'defense':
                 with db_session:
@@ -308,7 +300,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             Card, card_token=player.last_card_token_played)
                         if card is None:
                             raise HTTPException(status_code=400, detail='Card not found buddy')
-                        await manage_play_card(manager, request_data, target, player, card)
+                        await manage_play_card(manager, target, player, card)
 
             elif request_data.content and request_data.content.type == 'exchange_offert':
                 with db_session:
