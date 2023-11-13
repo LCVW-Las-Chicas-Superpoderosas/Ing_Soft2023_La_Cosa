@@ -625,14 +625,18 @@ async def broadcast_chat_message(request_data):
         chat_message = f'[{datetime.now().strftime("%H:%M:%S")}] {player.name}: {chat_message}'
 
         for connection, conn_id in chatManager.active_connections:
-            await connection.send_text(json.dumps({
-                'status_code': 200,
-                'detail': 'New message received',
-                'data': {
-                    'type': 'chat_message',
-                    'message': chat_message
-                }
-            }))
+            try:
+                await connection.send_text(json.dumps({
+                    'status_code': 200,
+                    'detail': 'New message received',
+                    'data': {
+                        'type': 'chat_message',
+                        'message': chat_message
+                    }
+                }))  
+            except WebSocketDisconnect:
+                await chatManager.disconnect(connection, conn_id)
+
 
 
 @router.websocket('/ws/chat')
