@@ -23,7 +23,7 @@ class Content(BaseModel):
     id_player: int = None
     target_id: int = None  # Default value is None
     chat_message: str = None
-    do_defense: int = 0
+    do_defense: bool = 0
 
 
 class WSRequest(BaseModel):
@@ -103,16 +103,11 @@ async def get_game_info(websocket, request_data):
         }))
 
 
-async def play_card(request_data):
-    card_token = request_data.card_token
+async def play_card(request_data, card):
     id_player = request_data.id_player
     target_id = request_data.target_id
 
     with db_session:
-        card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
-        # Check if the card exists
-        if card is None:
-            raise HTTPException(status_code=400, detail=f'Card token: {card_token} not found')
         user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
 
         # Check if the user exists
@@ -138,7 +133,7 @@ async def play_card(request_data):
 
 
 async def manage_play_card(manager, request_data, player, target, card):
-    play_card_result = await play_card(request_data.content)
+    play_card_result = await play_card(request_data.content, card)
     play_card_result = play_card_result['data']
     await manager.send_to(
         player.id,
