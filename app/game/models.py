@@ -259,10 +259,11 @@ class Game(Models.Entity):
 
         # Mezclar denuevo
         random.shuffle(initial_deck_shuffle)
-
+        
         # Armar el mazo con las cartas restantes
         # (infectados + sobrantes de tipo 1 Stay Away!)
         infected_cards = [card for card in self.cards if card.type == 2]
+        panic_cards = [card for card in self.cards if card.type == 0]
         left_over_stayaway_cards = [
             card for card in all_cards if
             card not in (initial_deck_shuffle) and
@@ -277,7 +278,7 @@ class Game(Models.Entity):
                     self.the_thing = player.id
                 initial_deck_shuffle.pop(0)
 
-        initial_deck = infected_cards + left_over_stayaway_cards
+        initial_deck = infected_cards + left_over_stayaway_cards + panic_cards
 
         random.shuffle(initial_deck)
 
