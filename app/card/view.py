@@ -21,9 +21,6 @@ class PlayCardRequest(BaseModel):
 
 # make target_user optional and None by default
 def _apply_effect(user, card, target_user=None):
-    # Check if the card is in the user's hand
-    if card not in user.cards:
-        raise HTTPException(status_code=400, detail=f"Card {card.name} is not in the user's hand")
 
     # Check that the users are in the same game:
     if target_user is not None:
@@ -37,9 +34,6 @@ def _apply_effect(user, card, target_user=None):
     if game is None:
         raise HTTPException(status_code=400,
             detail='Game not found for these players')
-
-    # Remove the card from the user that played it
-    user.cards.remove(card)
 
     # Apply the card effect
     effect = EFFECTS_TO_PLAYERS.get((card.name.lower()))
