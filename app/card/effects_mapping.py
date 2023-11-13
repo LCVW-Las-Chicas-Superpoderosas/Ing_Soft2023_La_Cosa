@@ -150,10 +150,6 @@ def im_good_here(player_id):
     #  lo unico que hace es agarrar cartas del mazo hasta agarrar una carta Alejate (Evita las de Panico)
     #  esta carta solo cancela el efecto de otra,
     #  asique en el effect solo hace lo mismo que todas las de defensa(linea de arriba)
-    first_token_number_for_stay_away_cards = 0
-    last_token_number_for_stay_away_cards = 88
-    first_token_number_for_panic = 89
-    last_token_number_for_panic = 108
     try:
         with db_session:
             player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
@@ -163,14 +159,11 @@ def im_good_here(player_id):
 
             while no_stay_away_card:
                 next_card = game.next_card_in_deck()
-                card_token = next_card.card_token
-                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
-                if  first_token_number_for_stay_away_cards <= card_token_id and card_token_id <= last_token_number_for_stay_away_cards:
+                if  next_card.type == 1:
                     player.add_card(next_card)
                     no_stay_away_card = False
                     game.delete_first_card_in_deck()
-
-                if first_token_number_for_panic <= card_token_id and card_token_id <= last_token_number_for_panic:
+                else:
                     game.add_card_to_discard_pile(next_card.id)
                     game.delete_first_card_in_deck()
 
@@ -187,10 +180,6 @@ def im_good_here(player_id):
 def no_thanks(player_id):
     #  lo unico que hace es agarrar cartas del mazo hasta agarrar una carta Alejate (Evita las de Panico)
     #  esta carta solo cancela un intercambio, asique en el effect solo hace lo de las cartas de defensa(linea de arriba)
-    first_token_number_for_stay_away_cards = 0
-    last_token_number_for_stay_away_cards = 88
-    first_token_number_for_panic = 89
-    last_token_number_for_panic = 108
     try:
         with db_session:
             player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
@@ -200,14 +189,11 @@ def no_thanks(player_id):
 
             while no_stay_away_card:
                 next_card = game.next_card_in_deck()
-                card_token = next_card.card_token
-                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
-                if  first_token_number_for_stay_away_cards <= card_token_id and card_token_id <= last_token_number_for_stay_away_cards:
+                if  next_card.type == 1:
                     player.add_card(next_card)
                     no_stay_away_card = False
                     game.delete_first_card_in_deck()
-
-                if first_token_number_for_panic <= card_token_id and card_token_id <= last_token_number_for_panic:
+                else:
                     game.add_card_to_discard_pile(next_card.id)
                     game.delete_first_card_in_deck()
 
@@ -224,10 +210,6 @@ def no_thanks(player_id):
 def you_failed(player_id):
     #  lo unico que hace es agarrar cartas del mazo hasta agarrar una carta Alejate (Evita las de Panico)
     #  esta carta tiene que pasar control a otro jugador(al siguiente en orden de turnos), pero debe hacerse fuera del apply effect
-    first_token_number_for_stay_away_cards = 0
-    last_token_number_for_stay_away_cards = 88
-    first_token_number_for_panic = 89
-    last_token_number_for_panic = 108
     try:
         with db_session:
             player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
@@ -237,14 +219,11 @@ def you_failed(player_id):
 
             while no_stay_away_card:
                 next_card = game.next_card_in_deck()
-                card_token = next_card.card_token
-                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
-                if  first_token_number_for_stay_away_cards <= card_token_id and card_token_id <= last_token_number_for_stay_away_cards:
+                if  next_card.type == 1:
                     player.add_card(next_card)
                     no_stay_away_card = False
                     game.delete_first_card_in_deck()
-
-                if first_token_number_for_panic <= card_token_id and card_token_id <= last_token_number_for_panic:
+                else:
                     game.add_card_to_discard_pile(next_card.id)
                     game.delete_first_card_in_deck()
 
