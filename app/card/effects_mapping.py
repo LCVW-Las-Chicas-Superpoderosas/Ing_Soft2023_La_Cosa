@@ -11,6 +11,7 @@ FAIL = 0
 SUCCESS = 1
 BEING_PLAYED = 2
 
+
 def flame_torch(target_id):
     try:
         with db_session:
@@ -81,7 +82,7 @@ def swap_places(target_id):
         }
 
 
-# "suspicion" retrieves a random card from the target player's hand 
+# "suspicion" retrieves a random card from the target player's hand
 def suspicion(target_id):
     try:
         with db_session:
@@ -91,7 +92,7 @@ def suspicion(target_id):
             # then get a random card from that Set
             random_card = random.choice(list(cards_set))
 
-            # create a dict with status 
+            # create a dict with status
             # and data the card name
             return {
                 'status': SUCCESS,
@@ -103,12 +104,19 @@ def suspicion(target_id):
         return {
             'status': FAIL
         }
-            
 
 
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
     'vigila tus espaldas': watch_your_back,
     'cambio de lugar!': swap_places,
-    'sospecha': suspicion
+    'sospecha': suspicion,
+    '¡mas vale que corras!': swap_places
+    # the card 'seduccion' make an exchange is handeled with the exchange cards
+}
+
+DEFENSE_CARDS_EFFECTS = {
+    # If none the card only neglect the acction of the cards and do anything else
+    'nada de barbacoas!': None,
+    'aterrador': None,
 }

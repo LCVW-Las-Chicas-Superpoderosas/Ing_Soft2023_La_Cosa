@@ -29,6 +29,7 @@ class ConnectionManager:
         for connection in self.active_connections:
             if connection[1] == player_id:
                 await connection[0].send_text(data)
+                break
 
 
 class ModelBase:

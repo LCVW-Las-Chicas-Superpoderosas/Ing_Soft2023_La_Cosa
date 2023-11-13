@@ -3,16 +3,18 @@ import json
 from datetime import datetime
 
 from card.models import Card
-from card.view import _apply_effect, router
+from card.view import _apply_effect, _validate_play, router
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from game.models import GameStatus
 from game.view import _player_exists
 from model_base import ConnectionManager, ModelBase
-from player.models import Player
-from pony.orm import db_session
+from pony.orm import db_session, commit
 from pydantic import BaseModel, ValidationError
+from card.effects_mapping import DEFENSE_CARDS_EFFECTS
 
 MODEL_BASE = ModelBase()
+manager = ConnectionManager()
+chatManager = ConnectionManager()
 
 
 class Content(BaseModel):
@@ -21,6 +23,7 @@ class Content(BaseModel):
     id_player: int = None
     target_id: int = None  # Default value is None
     chat_message: str = None
+    do_defense: bool = 0
 
 
 class WSRequest(BaseModel):
@@ -73,17 +76,38 @@ async def get_game_info(websocket, request_data):
         # Get the game status
         game_status = game.status
 
+        # by default the turns are "clockwise"
+        # the positions in the table increase clockwise and decrease counter-clockwise
+        next_turn = game.current_turn
+
         if game.clockwise:
             # if current_turn is the last player, then next turn is the first player
-            if game.current_turn == len(game.players) - 1:
+            if next_turn == len(game.players) - 1:
                 next_turn = 0
             else:
-                next_turn = game.current_turn + 1
+                next_turn += 1
+
+            for _ in range(len(game.players)):
+                player_turn = game.players.filter(
+                    my_position=next_turn).first()
+                if not player_turn.is_alive:
+                    next_turn += 1
+                else:
+                    break
         else:
-            if game.current_turn == 0:
+            # if current_turn is the first player, then next turn is the last player
+            if next_turn == 0:
                 next_turn = len(game.players) - 1
             else:
-                next_turn = game.current_turn - 1
+                next_turn -= 1
+
+            for _ in range(len(game.players)):
+                player_turn = game.players.filter(
+                    my_position=next_turn).first()
+                if not player_turn.is_alive:
+                    next_turn -= 1
+                else:
+                    break
 
         next_player = game.players.filter(
             my_position=next_turn).first().id
@@ -100,21 +124,13 @@ async def get_game_info(websocket, request_data):
         }))
 
 
-async def play_card(websocket, request_data):
-    card_token = request_data.card_token
-    id_player = request_data.id_player
-    target_id = request_data.target_id
-
+async def play_card(user, target_user, card):
     with db_session:
-        card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)
-        # Check if the card exists
-        if card is None:
-            raise HTTPException(status_code=400, detail=f'Card token: {card_token} not found')
-        user = MODEL_BASE.get_first_record_by_value(Player, id=id_player)
+        _validate_play(card.card_token, user.id, target_user.id)
 
         # Check if the user exists
         if user is None:
-            raise HTTPException(status_code=400, detail=f'User {id_player} not found')
+            raise HTTPException(status_code=400, detail='Player not found')
 
         if not user.is_alive:
             raise HTTPException(status_code=400, detail=f'User {user.name} is dead')
@@ -122,41 +138,245 @@ async def play_card(websocket, request_data):
         if user.game.status != GameStatus.STARTED.value:
             raise HTTPException(status_code=400, detail=f'Game {user.game.name} is not in progress')
 
-        if target_id is not None and target_id >= 0:
-            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
-            if target_user is None:
-                raise HTTPException(status_code=400, detail='Target user not found')
-
+        if target_user is not None:
             # Send the response back to the WebSocket client
-            await websocket.send_text(json.dumps(_apply_effect(user, card, target_user)))
+            return _apply_effect(user, card, target_user)
         else:
             # Send the response back to the WebSocket client
-            await websocket.send_text(json.dumps(_apply_effect(user, card)))
+            return _apply_effect(user, card)
+
+
+async def manage_play_card(manager, player, target, card):
+    play_card_result = await play_card(player, target, card)
+    play_card_result = play_card_result['data']
+    await manager.send_to(
+        player.id,
+        data=json.dumps({
+            'status_code': 200,
+            'detail': 'Card played successfully',
+            'data': {
+                'type': 'play_card',
+                'hand': player.get_hand(),
+                'the_thing_win': play_card_result['the_thing_win'],
+                'the_humans_win': play_card_result['the_humans_win'],
+                'effect_data': play_card_result['effect_data']
+            }
+        }))
+    if player is not None:
+        await manager.send_to(
+            target.id,
+            data=json.dumps({
+                'status_code': 200,
+                'detail': f'Card {card.name}played successfully',
+                'data': {
+                    'type': 'play_card',
+                    'hand': target.get_hand(),
+                    'the_thing_win': play_card_result['the_thing_win'],
+                    'the_humans_win': play_card_result['the_humans_win'],
+                    'effect_data': play_card_result['effect_data']
+                }
+            }))
 
 
 # idk why but if i tried to add another router is not detected xd
 @router.websocket('/ws/hand_play')
-async def hand_play_endpoint(websocket: WebSocket):
-    manager = ConnectionManager()
+async def hand_play_endpoint(websocket: WebSocket, id_player: int):
+    mb = ModelBase()
 
     await websocket.accept()
-    manager.active_connections.append((websocket, None))
-
+    manager.active_connections.append((websocket, id_player))
     try:
         while True:
             # Receive a message from the WebSocket client
             message = await websocket.receive_text()
-
             # Parse the incoming JSON message and validate it
             try:
                 request_data = WSRequest.parse_raw(message)
+                if request_data.content.target_id < 0:
+                    request_data.content.target_id = None
             except ValidationError as validation_error:
                 raise HTTPException(status_code=400, detail=validation_error.errors())
 
-            await play_card(websocket, request_data.content)
+            if request_data.content.type == 'play_card':
+                with db_session:
+                    player = _player_exists(id_player)
+                    if not player.is_alive:
+                        raise HTTPException(status_code=400, detail='Player is mad dead')
 
+                    card = mb.get_first_record_by_value(
+                        Card, card_token=request_data.content.card_token)
+                    if card is None:
+                        raise HTTPException(status_code=400, detail='Card not found, buddy')
+
+                    player.last_card_token_played = request_data.content.card_token
+                    player.remove_card(card.id)
+                    commit()
+
+                    if request_data.content.target_id is not None:
+                        target = _player_exists(request_data.content.target_id)
+
+                        if not target.is_alive:
+                            raise HTTPException(status_code=400, detail='Target is mad dead')
+
+                        defense_cards = target.can_defend(card.name)
+
+                        if len(defense_cards) != 0:
+                            # Len not 0 aka tiene defens
+                            await manager.send_to(
+                                target.id,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': 'Target player can defense',
+                                    'data': {
+                                        'type': 'defense',
+                                        'defense_cards': defense_cards,
+                                        'attacker_id': player.id,
+                                        'attacker_name': player.name,
+                                        'card_being_played': card.name,
+                                        'under_attack': True
+                                    }
+                                }))
+                        else:
+
+                            # we check if the card make a exchange
+                            is_exchange = card.is_exchange()
+                            if is_exchange:
+                                await manager.send_to(
+                                    id_player,
+                                    data=json.dumps({
+                                        'status_code': 200,
+                                        'detail': f'Target player cant defense, exchanged card {card.id}',
+                                        'data': {
+                                            'type': 'exchange'
+                                        }}))
+
+                                await manager.send_to(
+                                    target.id,
+                                    data=json.dumps({
+                                        'status_code': 200,
+                                        'detail': 'Target player need to exchange',
+                                        'data': {
+                                            'type': 'exchange_offert',
+                                            'attacker_id': player.id,
+                                            'attacker_name': player.name,
+                                            'card_being_played': card.name,
+                                            'under_attack': False
+                                        }}))
+                                target.add_card(card)
+
+                            else:
+                                await manage_play_card(manager, player, target, card)
+                    else:
+                        player.last_card_token_played = request_data.content.card_token
+                        await manage_play_card(manager, player, None, card)
+
+            elif request_data.content.type == 'defense':
+                with db_session:
+                    player = _player_exists(id_player)
+                    if not player.is_alive:
+                        raise HTTPException(status_code=400, detail='Player is mad dead')
+
+                    target = _player_exists(request_data.content.target_id)        
+                    if not target.is_alive:
+                        raise HTTPException(status_code=400, detail='Target is mad dead')
+
+                    if request_data.content.do_defense:
+                        card = mb.get_first_record_by_value(
+                            Card, card_token=request_data.content.card_token)
+                        if card is None:
+                            raise HTTPException(status_code=400, detail='Card not found buddy')
+
+                        try:
+                            card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower()]
+                        except KeyError:
+                            raise HTTPException(status_code=400, detail='Card is NOT IN DEFENSE DICT OR IS NOT DEFENSE!')
+
+                        if card_effect is None:
+                            if player.check_card_in_hand(card.id):
+                                player.remove_card(card.id)
+                                commit()
+                                await manager.send_to(
+                                    id_player,
+                                    data=json.dumps({
+                                        'status_code': 200,
+                                        'detail': 'Target player defense succesfully',
+                                        'data': {
+                                            'type': 'defense',
+                                            'hand': player.get_hand(),
+                                            'under_attack': False
+                                        }}))
+                                await manager.send_to(
+                                    target.id,
+                                    data=json.dumps({
+                                        'status_code': 200,
+                                        'detail': 'Target player defense succesfully',
+                                        'data': {
+                                            'type': 'defense',
+                                            'hand': target.get_hand(),
+                                            'under_attack': False
+                                        }}))
+                            else:
+                                await manager.send_to(
+                                    id_player,
+                                    data=json.dumps({
+                                        'status_code': 400,
+                                        'detail': 'Player doesnt have that card',
+                                        'data': {
+                                            'type': 'defense',
+                                            'hand': player.get_hand(),
+                                            'under_attack': False
+                                        }
+                                    }))
+                        else:
+                            player.last_card_token_played = card.card_token
+                            await manage_play_card(manager, player, target, card)
+                    else:
+                        card = mb.get_first_record_by_value(
+                            Card, card_token=target.last_card_token_played)
+                        if card is None:
+                            raise HTTPException(status_code=400, detail='Card not found buddy')
+                        await manage_play_card(manager, target, player, card)
+
+            elif request_data.content and request_data.content.type == 'exchange_offert':
+                with db_session:
+                    target = _player_exists(request_data.content.target_id)
+                    if not target.is_alive:
+                        raise HTTPException(status_code=400, detail='Target is mad dead')
+
+                    player = _player_exists(id_player)
+                    if not player.is_alive:
+                        raise HTTPException(status_code=400, detail='Player is mad dead')
+
+                    card = mb.get_first_record_by_value(
+                        Card, card_token=request_data.content.card_token)
+                    if card is None:
+                        raise HTTPException(status_code=400, detail='Card not found buddy')
+
+                    # removemos la carta que quiere dar
+                    player.remove_card(card.id)
+                    target.add_card(card)
+                    commit()
+
+                    await manager.send_to(
+                        id_player,
+                        data=json.dumps({
+                            'status_code': 200,
+                            'detail': 'Result from exchange',
+                            'data': {
+                                'type': 'result',
+                                'hand': player.get_hand()
+                            }}))
+                    await manager.send_to(
+                        target.id,
+                        data=json.dumps({
+                            'status_code': 200,
+                            'detail': 'Result from exchange',
+                            'data': {
+                                'type': 'result',
+                                'hand': target.get_hand()
+                            }}))
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        await manager.disconnect(websocket, id_player)
     except HTTPException as e:
         await websocket.send_text(
             json.dumps({
@@ -167,14 +387,13 @@ async def hand_play_endpoint(websocket: WebSocket):
 
 @router.websocket('/ws/game_status')
 async def game_status_ws(websocket: WebSocket):
-    manager = ConnectionManager()
     await websocket.accept()
     manager.active_connections.append((websocket, None))
     request_data = None
     try:
         while True:
             try:
-                message = await asyncio.wait_for(websocket.receive_text(), timeout=3)  # Set a timeout of 3 seconds
+                message = await asyncio.wait_for(websocket.receive_text(), timeout=1)  # Set a timeout of 3 seconds
                 try:
                     # Parse the incoming JSON message and validate it
                     request_data = WSRequest.parse_raw(message)
@@ -201,9 +420,9 @@ async def game_status_ws(websocket: WebSocket):
 
 @router.websocket('/ws/card_exchange')
 async def card_exchange(websocket: WebSocket, id_player: int):
+
     mb = ModelBase()
 
-    manager = ConnectionManager()
     await websocket.accept()
     manager.active_connections.append((websocket, id_player))
 
@@ -213,15 +432,16 @@ async def card_exchange(websocket: WebSocket, id_player: int):
             try:
                 # Parse the incoming JSON message and validate it
                 request_data = WSRequest.parse_raw(message)
-                
+
                 if request_data.content and request_data.content.type == 'exchange_offert':
                     with db_session:
                         card = mb.get_first_record_by_value(
                             Card, card_token=request_data.content.card_token)
-                        target = mb.get_first_record_by_value(
-                            Player, id=request_data.content.target_id)
+                        if card is None:
+                            raise HTTPException(status_code=400, detail='Card not found buddy')
+                        target = _player_exists(request_data.content.target_id)
 
-                        player = mb.get_first_record_by_value(Player, id=id_player)
+                        player = _player_exists(id_player)
 
                         if not target.is_alive:
                             raise HTTPException(status_code=400, detail='Target is mad dead')
@@ -230,29 +450,8 @@ async def card_exchange(websocket: WebSocket, id_player: int):
 
                         # removemos la carta que quiere dar
                         player.remove_card(card.id)
-                        await manager.send_to(
-                            id_player,
-                            data=json.dumps({
-                                'status_code': 200,
-                                'detail': 'Exchange offer finished',
-                                'data': {
-                                    'type': 'get_result'
-                                }}))
-                        await manager.send_to(
-                            target.id,
-                            data=json.dumps({
-                                'status_code': 200,
-                                'detail': 'Exchange finished',
-                                'data': {
-                                    'type': 'get_result',
-                                }}))
                         target.add_card(card)
-                elif request_data.content and request_data.content.type == 'result':
-                    with db_session:
-                        player = mb.get_first_record_by_value(Player, id=id_player)
-
-                        if not player.is_alive:
-                            raise HTTPException(status_code=400, detail='Player is mad dead')
+                        commit()
 
                         await manager.send_to(
                             id_player,
@@ -263,18 +462,27 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     'type': 'result',
                                     'hand': player.get_hand()
                                 }}))
-
+                        await manager.send_to(
+                            target.id,
+                            data=json.dumps({
+                                'status_code': 200,
+                                'detail': 'Result from exchange',
+                                'data': {
+                                    'type': 'result',
+                                    'hand': target.get_hand()
+                                }}))
                 elif request_data.content and request_data.content.type == 'exchange':
                     with db_session:
                         card = mb.get_first_record_by_value(
                             Card, card_token=request_data.content.card_token)
-                        target = mb.get_first_record_by_value(
-                            Player, id=request_data.content.target_id)
+                        if card is None:
+                            raise HTTPException(status_code=400, detail='Card not found buddy')
 
-                        player = mb.get_first_record_by_value(Player, id=id_player)
+                        target = _player_exists(request_data.content.target_id)
                         if not target.is_alive:
                             raise HTTPException(status_code=400, detail='Target is mad dead')
 
+                        player = _player_exists(id_player)
                         if not player.is_alive:
                             raise HTTPException(status_code=400, detail='Player is mad dead')
 
@@ -286,9 +494,9 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                 target.id,
                                 data=json.dumps({
                                     'status_code': 200,
-                                    'detail': 'Target player can defend',
+                                    'detail': 'Target player can defense',
                                     'data': {
-                                        'type': 'defend',
+                                        'type': 'defense',
                                         'defense_cards': defense,
                                         'attacker_id': player.id,
                                         'attacker_name': player.name
@@ -297,11 +505,13 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                         else:
                             # removemos la carta que quiere dar
                             player.remove_card(card.id)
+                            target.add_card(card)
+                            commit()
                             await manager.send_to(
                                 id_player,
                                 data=json.dumps({
                                     'status_code': 200,
-                                    'detail': f'Target player cant defend, exchanged card {card.id}',
+                                    'detail': f'Target player cant defense, exchanged card {card.id}',
                                     'data': {
                                         'type': 'exchange'
                                     }}))
@@ -315,38 +525,62 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                         'type': 'exchange_offert',
                                         'attacker_id': player.id,
                                         'attacker_name': player.name
-
                                     }}))
-                            target.add_card(card)
 
-                elif request_data.content and request_data.content.type == 'defend':
+                elif request_data.content and request_data.content.type == 'defense':
                     with db_session:
-                        player = mb.get_first_record_by_value(Player, id=id_player)
+                        player = _player_exists(id_player)
                         if not player.is_alive:
                             raise HTTPException(status_code=400, detail='Player is mad dead')
 
+                        target = _player_exists(request_data.content.target_id)
+                        if not target.is_alive:
+                            raise HTTPException(status_code=400, detail='Target is mad dead')
+
                         card = mb.get_first_record_by_value(
                             Card, card_token=request_data.content.card_token)
+                        if card is None:
+                            raise HTTPException(status_code=400, detail='Card not found buddy')
 
-                        if player.check_card_in_hand(card.id):
-                            player.remove_card(card.id)
-                            await manager.send_to(
-                                id_player,
-                                data=json.dumps({
-                                    'status_code': 200,
-                                    'detail': 'Target player defend succesfully',
-                                    'data': {
-                                        'type': 'get_result',
-                                    }}))
+                        try:
+                            card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower()]
+                        except KeyError:
+                            raise HTTPException(status_code=400, detail='Card is NOT IN DEFENSE DICT OR IS NOT DEFENSE!')
+
+                        if card_effect is None:
+                            if player.check_card_in_hand(card.id):
+                                player.remove_card(card.id)
+                                commit()
+                                await manager.send_to(
+                                    id_player,
+                                    data=json.dumps({
+                                        'status_code': 200,
+                                        'detail': 'Result from exchange',
+                                        'data': {
+                                            'type': 'result',
+                                            'hand': player.get_hand()
+                                        }}))
+                                await manager.send_to(
+                                    target.id,
+                                    data=json.dumps({
+                                        'status_code': 200,
+                                        'detail': 'Result from exchange',
+                                        'data': {
+                                            'type': 'result',
+                                            'hand': target.get_hand()
+                                        }}))
+                            else:
+                                await websocket.send_text(
+                                    json.dumps({
+                                        'status_code': 400,
+                                        'detail': 'Player doesnt have that card',
+                                        'data': {
+                                            'type': 'defense'
+                                        }
+                                    }))
                         else:
-                            await websocket.send_text(
-                                json.dumps({
-                                    'status_code': 400,
-                                    'detail': 'Player doesnt have that card',
-                                    'data': {
-                                        'type': 'defend'
-                                    }
-                                }))
+                            player.last_card_token_played = card.card_token
+                            await manage_play_card(manager, player, target, card)
 
             except ValidationError as validation_error:
                 await websocket.send_text(
@@ -356,7 +590,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                     }))
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket, id_player)
+        await manager.disconnect(websocket, id_player)
 
     except HTTPException as e:
         await websocket.send_text(
@@ -365,7 +599,6 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                 'detail': e.detail
             }))
 
-chatManager = ConnectionManager()
 
 async def broadcast_chat_message(request_data):
     chat_message = request_data.chat_message
@@ -382,7 +615,7 @@ async def broadcast_chat_message(request_data):
             raise HTTPException(
                 status_code=400,
                 detail='Player is not part of a game.')
-        
+
         # If the message is empty, don't send it
         if chat_message == '':
             raise HTTPException(
@@ -415,7 +648,7 @@ async def chat_endpoint(websocket: WebSocket, id_player: int):
         while True:
             try:
                 # use asyncio to wait for the message
-                message = await asyncio.wait_for(websocket.receive_text(), timeout=1100) 
+                message = await asyncio.wait_for(websocket.receive_text(), timeout=1100)
                 try:
                     # Parse the incoming JSON message and validate it
                     request_data = WSRequest.parse_raw(message)

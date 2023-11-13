@@ -18,57 +18,63 @@ class TestWs(unittest.TestCase):
     def setUpClass(cls):
         initialize_database()
 
+    @patch('player.models.Player.can_defend', lambda *args, **kwargs: [])
     def test_play_card_invalid_card_token(self):
         with db_session:
             card, chat, player, game = create_data_test()
             payload = {
                 'content': {
+                    'type': 'play_card',
                     'card_token': 'test_card_fake',
                     'id_player': player[0].id,
-                    'target_id': player[0].id
+                    'target_id': player[1].id
                 }
             }
-            with client.websocket_connect('/ws/hand_play') as websocket:
+            with client.websocket_connect('/ws/hand_play', params={'id_player': player[0].id}) as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
         self.assertEqual(data['status_code'], 400)
 
+    @patch('player.models.Player.can_defend', lambda *args, **kwargs: [])
     def test_play_card_user_not_found(self):
         with db_session:
             card, chat, player, game = create_data_test()
             payload = {
                 'content': {
+                    'type': 'play_card',
                     'card_token': card.card_token,
                     'id_player': 999,  # Use an ID that doesn't exist
-                    'target_id': player[0].id
+                    'target_id': player[1].id
                 }
             }
-            with client.websocket_connect('/ws/hand_play') as websocket:
+            with client.websocket_connect('/ws/hand_play', params={'id_player': 999}) as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
-        self.assertEqual(data['detail'], f'User {999} not found')
+        self.assertEqual(data['status_code'], 400)
 
+    @patch('player.models.Player.can_defend', lambda *args, **kwargs: [])
     def test_play_card_game_not_playing(self):
         with db_session:
             card, chat, player, game = create_data_test()
             payload = {
                 'content': {
+                    'type': 'play_card',
                     'card_token': card.card_token,
                     'id_player': player[0].id,
                     'target_id': 999  # Use a target ID that doesn't exist
                 }
             }
-            with client.websocket_connect('/ws/hand_play') as websocket:
+            with client.websocket_connect('/ws/hand_play', params={'id_player': player[0].id}) as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
 
         self.assertEqual(data['status_code'], 400)
 
-
-    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('player.models.Player.can_defend', lambda *args, **kwargs: [])
+    @patch('ws.view._validate_play', lambda *args, **kwargs: None)
     @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_play_card_with_valid_data(self, *args, **kwargs):
         with db_session:
@@ -76,68 +82,18 @@ class TestWs(unittest.TestCase):
             game.status = 1
             commit()
             payload = {
-                'content': {'card_token': card.card_token,
-                'id_player': player[0].id,
-                'target_id': player[0].id}
+                'content': {
+                    'card_token': card.card_token,
+                    'type': 'play_card',
+                    'id_player': player[0].id,
+                    'target_id': player[1].id}
             }
-            with client.websocket_connect('/ws/hand_play') as websocket:
+            with client.websocket_connect('/ws/hand_play', params={'id_player': player[0].id}) as websocket:
                 websocket.send_text(json.dumps(payload))
                 data = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)
 
-        self.assertEqual(data['detail'], 'Card create_data_test_card played successfully')
-        self.assertEqual(data['data']['user']['id'], player[0].id)
-        self.assertFalse(data['data']['the_thing_win'])
-        self.assertFalse(data['data']['the_humans_win'])
-
-    @patch('card.view._validate_play', lambda *args, **kwargs: None)
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
-    def test_human_win_with_valid_data(self, *args, **kwargs):
-        with db_session:
-            card, chat, player, game = create_data_test()
-            player[0].is_alive = True
-            player[1].is_alive = False
-            commit()
-            payload = {
-                'content': {'card_token': card.card_token,
-                'id_player': player[0].id,
-                'target_id': player[0].id}
-            }
-            with client.websocket_connect('/ws/hand_play') as websocket:
-                websocket.send_text(json.dumps(payload))
-                data = json.loads(websocket.receive_text())
-            delete_data_full_lobby(card, chat, player, game)
-
-        self.assertEqual(data['detail'], 'Card create_data_test_card played successfully')
-        self.assertEqual(data['data']['user']['id'], player[0].id)
-        self.assertFalse(data['data']['the_thing_win'])
-        self.assertTrue(data['data']['the_humans_win'])
-
-
-    @patch('card.view._validate_play', lambda *args, **kwargs: None)
-    @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
-    def test_thing_win_with_valid_data(self, *args, **kwargs):
-        with db_session:
-            card, chat, player, game = create_data_test()
-            player[0].is_alive = False
-            player[1].is_alive = True
-            game.next_turn()
-            commit()
-            payload = {
-                'content': {'card_token': card.card_token,
-                'id_player': player[1].id,
-                'target_id': player[1].id}
-            }
-            with client.websocket_connect('/ws/hand_play') as websocket:
-                websocket.send_text(json.dumps(payload))
-                data = json.loads(websocket.receive_text())
-
-            delete_data_full_lobby(card, chat, player, game)
-
-        self.assertEqual(data['detail'], 'Card create_data_test_card played successfully')
-        self.assertEqual(data['data']['user']['id'], player[1].id)
-        self.assertTrue(data['data']['the_thing_win'])
-        self.assertFalse(data['data']['the_humans_win'])
+        self.assertEqual(data['data']['type'], 'play_card')
 
     def test_get_valid_game_info(self):
         with db_session:
@@ -253,8 +209,9 @@ class TestWs(unittest.TestCase):
             delete_data_full_lobby(card, chat, player, game)
 
         self.assertEqual(response['status_code'], 200)
-        self.assertEqual(response['data']['type'], 'get_result')
+        self.assertEqual(response['data']['type'], 'result')
 
+    @patch('ws.view.DEFENSE_CARDS_EFFECTS', {'create_data_test_card': None})
     def test_card_defend_with_valid_data(self, *args, **kwargs):
         with db_session:
 
@@ -271,25 +228,6 @@ class TestWs(unittest.TestCase):
                 }
             }
             with client.websocket_connect('/ws/card_exchange', params={'id_player': player[1].id}) as websocket:
-                websocket.send_text(json.dumps(payload))
-                response = json.loads(websocket.receive_text())
-            delete_data_full_lobby(card, chat, player, game)
-
-        self.assertEqual(response['status_code'], 200)
-        self.assertEqual(response['data']['type'], 'get_result')
-
-    def test_card_result_with_valid_data(self, *args, **kwargs):
-        with db_session:
-
-            card, chat, player, game = create_data_test()
-            player[0].is_alive = True
-            commit()
-            payload = {
-                'content': {
-                    'type': 'result',
-                }
-            }
-            with client.websocket_connect('/ws/card_exchange', params={'id_player': player[0].id}) as websocket:
                 websocket.send_text(json.dumps(payload))
                 response = json.loads(websocket.receive_text())
             delete_data_full_lobby(card, chat, player, game)

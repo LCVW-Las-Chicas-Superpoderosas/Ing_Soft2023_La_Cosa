@@ -5,6 +5,7 @@ from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
 import json
 import random
+import os
 
 CARDS_PER_PERSON = 4
 
@@ -109,7 +110,6 @@ class Game(Models.Entity):
                 right = alive_players.filter(my_position=player.my_position+1).first()
 
             return [left.id, right.id]
-
 
     def check_turn(self, user_position):
         return user_position == self.get_turns()
@@ -272,7 +272,7 @@ class Game(Models.Entity):
 
         # Repartir 4 cartas a cada jugador
         for player in self.players:
-            for i in range(0, 4):
+            for _ in range(0, 4):
                 player.cards.add(initial_deck_shuffle[0])
                 if initial_deck_shuffle[0].type == 3:
                     self.the_thing = player.id

@@ -21,9 +21,6 @@ class PlayCardRequest(BaseModel):
 
 # make target_user optional and None by default
 def _apply_effect(user, card, target_user=None):
-    # Check if the card is in the user's hand
-    if card not in user.cards:
-        raise HTTPException(status_code=400, detail=f"Card {card.name} is not in the user's hand")
 
     # Check that the users are in the same game:
     if target_user is not None:
@@ -37,9 +34,6 @@ def _apply_effect(user, card, target_user=None):
     if game is None:
         raise HTTPException(status_code=400,
             detail='Game not found for these players')
-
-    # Remove the card from the user that played it
-    user.cards.remove(card)
 
     # Apply the card effect
     effect = EFFECTS_TO_PLAYERS.get((card.name.lower()))
@@ -68,11 +62,11 @@ def _apply_effect(user, card, target_user=None):
         'status_code': 200,
         'detail': f'Card {card.name} played successfully',
         'data': {
-            'effect_result': effect_result['data'],
             'user': user_data,
             'target_user': target_data,
             'the_thing_win': game.validate_the_thing_win(),
-            'the_humans_win': game.validate_humans_win()
+            'the_humans_win': game.validate_humans_win(),
+            'effect_data': effect_result.get('data', None)
         }
     }
 
@@ -125,7 +119,6 @@ def play_card(request_body: PlayCardRequest):
     target_id = request_body.target_id
 
     with db_session:
-        
         _validate_play(card_token, id_player, target_id)
 
         card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)

@@ -577,6 +577,7 @@ def discard_card(data: DiscardCardRequest):
                 status_code=500,
                 detail=str(e)
             )
+        commit()
 
         hand = [{
             'card_token': card.card_token,
