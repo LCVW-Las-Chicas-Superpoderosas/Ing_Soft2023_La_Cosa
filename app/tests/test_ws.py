@@ -189,7 +189,6 @@ class TestWs(unittest.TestCase):
         self.assertEqual(response['data']['type'], 'exchange')
 
     def test_card_exchange_offer_with_valid_data(self, *args, **kwargs):
-        
         with db_session:
 
             card, chat, player, game = create_data_test()
@@ -212,8 +211,8 @@ class TestWs(unittest.TestCase):
         self.assertEqual(response['status_code'], 200)
         self.assertEqual(response['data']['type'], 'result')
 
+    @patch('ws.view.DEFENSE_CARDS_EFFECTS', {'create_data_test_card': None})
     def test_card_defend_with_valid_data(self, *args, **kwargs):
-        
         with db_session:
 
             card, chat, player, game = create_data_test()

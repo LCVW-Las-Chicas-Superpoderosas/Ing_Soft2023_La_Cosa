@@ -271,7 +271,7 @@ class Game(Models.Entity):
         ]
 
         # Repartir 4 cartas a cada jugador
-        if os.environ['FIRE']:
+        if os.environ['FIRE'] != 0:
             for player in self.players:
                 player.cards.add(ModelBase().get_first_record_by_value(Card, card_token='img81.jpg'))
                 player.cards.add(ModelBase().get_first_record_by_value(Card, card_token='img22.jpg'))
