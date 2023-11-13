@@ -270,23 +270,12 @@ class Game(Models.Entity):
         ]
 
         # Repartir 4 cartas a cada jugador
-        if os.environ['FIRE'] != 0:
-            for player in self.players:
-                player.cards.add(ModelBase().get_first_record_by_value(Card, card_token='img81.jpg'))
-                player.cards.add(ModelBase().get_first_record_by_value(Card, card_token='img22.jpg'))
-                player.cards.add(ModelBase().get_first_record_by_value(Card, card_token='img81.jpg'))
-                player.cards.add(ModelBase().get_first_record_by_value(Card, card_token='img22.jpg'))
-                for _ in range(0, 4):
-                    if initial_deck_shuffle[0].type == 3:
-                        self.the_thing = player.id
-                    initial_deck_shuffle.pop(0)
-        else:
-            for player in self.players:
-                for _ in range(0, 4):
-                    player.cards.add(initial_deck_shuffle[0])
-                    if initial_deck_shuffle[0].type == 3:
-                        self.the_thing = player.id
-                    initial_deck_shuffle.pop(0)
+        for player in self.players:
+            for _ in range(0, 4):
+                player.cards.add(initial_deck_shuffle[0])
+                if initial_deck_shuffle[0].type == 3:
+                    self.the_thing = player.id
+                initial_deck_shuffle.pop(0)
 
         initial_deck = infected_cards + left_over_stayaway_cards
 
