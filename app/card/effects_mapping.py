@@ -129,10 +129,30 @@ def seduction(target_id):
         }
 
 
+
+def analysis(target_id):
+    try:
+        with db_session:
+            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
+
+            all_card_tokens = {card.card_token for card in target_user.cards}  # devuelve un set de card_tokens
+
+            return {
+                'status': SUCCESS,
+                'data': all_card_tokens
+            }
+    except Exception as e:
+
+        print(e)
+        return {
+            'status': FAIL
+        }
+
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
     'vigila tus espaldas': watch_your_back,
     'cambio de lugar!': swap_places,
     'sospecha': suspicion,
-    'seduccion': seduction
+    'seduccion': seduction,
+    'analisis': analysis
 }
