@@ -259,7 +259,7 @@ class Game(Models.Entity):
 
         # Mezclar denuevo
         random.shuffle(initial_deck_shuffle)
-        
+
         # Armar el mazo con las cartas restantes
         # (infectados + sobrantes de tipo 1 Stay Away!)
         infected_cards = [card for card in self.cards if card.type == 2]

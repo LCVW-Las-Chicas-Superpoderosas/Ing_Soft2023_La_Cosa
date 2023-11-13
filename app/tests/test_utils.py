@@ -354,3 +354,33 @@ def create_data_started_game_set_positions():
         player4 = model_base.get_first_record_by_value(Player, name='create_data_started_game_set_positions_4')
         game = model_base.get_first_record_by_value(Game, name='create_data_started_game_set_positions')
     return card, chat, [player1, player2, player3, player4], game
+
+def create_data_started_game_top_card():
+    try:
+        card = model_base.add_record(Card, name='create_data_started_game_card',
+            card_token='create_data_started_game_card', type=CardType.PANIC.value)
+        
+        chat = model_base.add_record(Chat)
+        player1 = model_base.add_record(Player, name='create_data_started_game_1', cards=card)
+        player2 = model_base.add_record(Player, name='create_data_started_game_2', cards=card)
+        player3 = model_base.add_record(Player, name='create_data_started_game_3', cards=card)
+        player4 = model_base.add_record(Player, name='create_data_started_game_4', cards=card)
+        player5 = model_base.add_record(Player, name='create_data_started_game_5', cards=card)
+        commit()
+
+        game = model_base.add_record(Game, name='create_data_started_game', password='', chats=chat,
+            cards=card, players=[player1, player2, player3, player4], host=player1.id,
+            the_thing=player2.id, min_players=4, max_players=4, status=1, deck='[339, 2, 3, 4]')
+
+        commit()
+    except Exception:
+        game = model_base.get_first_record_by_value(Game, name='create_data_started_game')
+        chat = model_base.get_first_record_by_value(Chat)
+        player1 = model_base.get_first_record_by_value(Player, name='create_data_started_game_1')
+        player2 = model_base.get_first_record_by_value(Player, name='create_data_started_game_2')
+        player3 = model_base.get_first_record_by_value(Player, name='create_data_started_game_3')
+        player4 = model_base.get_first_record_by_value(Player, name='create_data_started_game_4')
+        player5 = model_base.get_first_record_by_value(Player, name='create_data_started_game_5')
+        card = model_base.get_first_record_by_value(Card, card_token='create_data_started_game_card')
+
+    return card, chat, [player1, player2, player3, player4, player5], game

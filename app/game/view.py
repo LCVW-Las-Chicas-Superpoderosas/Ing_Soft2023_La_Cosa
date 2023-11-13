@@ -589,3 +589,39 @@ def discard_card(data: DiscardCardRequest):
             'discard card sucessfully',
         'data': {'hand': hand}
     }
+
+
+@router.get('/game/top_card')
+def get_top_card(id_game: int = Header(..., key='id-game')):
+    with db_session:
+
+        game = MODELBASE.get_first_record_by_value(
+            Game, id=id_game)
+        
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f'game {game.id} does not exist'
+            )
+
+        if game.status == 0:  # 0 = WAITING
+            raise HTTPException(
+                status_code=400,
+                detail=f'The game is not started, cannot get first card type of {game.id}'
+            )
+
+        if game.status == 2:  # 2 = FINISHED
+            raise HTTPException(
+                status_code=400,
+                detail=f'The game is finished, cannot get first card type of {game.id}'
+            )
+        top_card = game.next_card_in_deck()
+        top_card_type = top_card.type
+        breakpoint()
+    return {
+        'status_code': 200,
+        'message': f'top card of {game.id} game',
+        'data': {
+            'hand': top_card_type
+        }
+    }
