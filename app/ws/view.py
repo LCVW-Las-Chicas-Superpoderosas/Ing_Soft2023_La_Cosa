@@ -8,7 +8,6 @@ from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from game.models import GameStatus
 from game.view import _player_exists
 from model_base import ConnectionManager, ModelBase
-from player.models import Player
 from pony.orm import db_session, commit
 from pydantic import BaseModel, ValidationError
 
@@ -108,7 +107,7 @@ async def play_card(user, target_user, card):
 
         # Check if the user exists
         if user is None:
-            raise HTTPException(status_code=400, detail=f'Player not found')
+            raise HTTPException(status_code=400, detail='Player not found')
 
         if not user.is_alive:
             raise HTTPException(status_code=400, detail=f'User {user.name} is dead')
@@ -251,7 +250,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                     if not player.is_alive:
                         raise HTTPException(status_code=400, detail='Player is mad dead')
 
-                    target = _player_exists(request_data.content.target_id)             
+                    target = _player_exists(request_data.content.target_id)        
                     if not target.is_alive:
                         raise HTTPException(status_code=400, detail='Target is mad dead')
 
@@ -386,7 +385,7 @@ async def game_status_ws(websocket: WebSocket):
 
 @router.websocket('/ws/card_exchange')
 async def card_exchange(websocket: WebSocket, id_player: int):
-    
+
     mb = ModelBase()
 
     await websocket.accept()
@@ -555,7 +554,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                 'status_code': e.status_code,
                 'detail': e.detail
             }))
-        
+
 
 async def broadcast_chat_message(request_data):
     chat_message = request_data.chat_message
@@ -589,8 +588,7 @@ async def broadcast_chat_message(request_data):
                     'type': 'chat_message',
                     'message': chat_message
                 }
-            }))    
-
+            }))
 
 
 @router.websocket('/ws/chat')
@@ -602,7 +600,7 @@ async def chat_endpoint(websocket: WebSocket, id_player: int):
         while True:
             try:
                 # use asyncio to wait for the message
-                message = await asyncio.wait_for(websocket.receive_text(), timeout=1100) 
+                message = await asyncio.wait_for(websocket.receive_text(), timeout=1100)
                 try:
                     # Parse the incoming JSON message and validate it
                     request_data = WSRequest.parse_raw(message)
