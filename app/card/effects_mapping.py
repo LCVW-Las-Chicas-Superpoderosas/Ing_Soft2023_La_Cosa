@@ -217,7 +217,7 @@ DEFENSE_CARDS_EFFECTS = {
     # If none the card only neglect the acction of the cards and do anything else
     'nada de barbacoas!': None,
     'aterrador': None,
-    'fallaste': you_failed,
-    'estoy bien aqui': im_good_here,
-    'no, gracias': no_thanks
+    'fallaste!': you_failed,
+    'aqui estoy bien': im_good_here,
+    'no, gracias!': no_thanks
 }
