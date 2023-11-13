@@ -76,6 +76,7 @@ class Player(Models.Entity):
         card = self.cards.select().filter(id=card_id).first()
         card_list = list(self.cards)
         card_list.remove(card)
+        self.cards = card_list
 
     def check_card_in_hand(self, card_id):
         card = self.cards.select().filter(id=card_id).first()
