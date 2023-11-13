@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 from card.models import Card
-from card.view import _apply_effect, router
+from card.view import _apply_effect, _validate_play, router
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from game.models import GameStatus
 from game.view import _player_exists
@@ -76,17 +76,38 @@ async def get_game_info(websocket, request_data):
         # Get the game status
         game_status = game.status
 
+        # by default the turns are "clockwise"
+        # the positions in the table increase clockwise and decrease counter-clockwise
+        next_turn = game.current_turn
+
         if game.clockwise:
             # if current_turn is the last player, then next turn is the first player
-            if game.current_turn == len(game.players) - 1:
+            if next_turn == len(game.players) - 1:
                 next_turn = 0
             else:
-                next_turn = game.current_turn + 1
+                next_turn += 1
+
+            for _ in range(len(game.players)):
+                player_turn = game.players.filter(
+                    my_position=next_turn).first()
+                if not player_turn.is_alive:
+                    next_turn += 1
+                else:
+                    break
         else:
-            if game.current_turn == 0:
+            # if current_turn is the first player, then next turn is the last player
+            if next_turn == 0:
                 next_turn = len(game.players) - 1
             else:
-                next_turn = game.current_turn - 1
+                next_turn -= 1
+
+            for _ in range(len(game.players)):
+                player_turn = game.players.filter(
+                    my_position=next_turn).first()
+                if not player_turn.is_alive:
+                    next_turn -= 1
+                else:
+                    break
 
         next_player = game.players.filter(
             my_position=next_turn).first().id
@@ -105,6 +126,7 @@ async def get_game_info(websocket, request_data):
 
 async def play_card(user, target_user, card):
     with db_session:
+        _validate_play(card.card_token, user.id, target_user.id)
 
         # Check if the user exists
         if user is None:
@@ -215,6 +237,8 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     }
                                 }))
                         else:
+
+                            # we check if the card make a exchange
                             is_exchange = card.is_exchange()
                             if is_exchange:
                                 await manager.send_to(

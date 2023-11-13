@@ -111,7 +111,6 @@ class Game(Models.Entity):
 
             return [left.id, right.id]
 
-
     def check_turn(self, user_position):
         return user_position == self.get_turns()
 

@@ -74,7 +74,7 @@ class TestWs(unittest.TestCase):
         self.assertEqual(data['status_code'], 400)
 
     @patch('player.models.Player.can_defend', lambda *args, **kwargs: [])
-    @patch('card.view._validate_play', lambda *args, **kwargs: None)
+    @patch('ws.view._validate_play', lambda *args, **kwargs: None)
     @patch('card.view.EFFECTS_TO_PLAYERS', {'create_data_test_card': lambda x: {'status': True, 'data': None}})
     def test_play_card_with_valid_data(self, *args, **kwargs):
         with db_session:

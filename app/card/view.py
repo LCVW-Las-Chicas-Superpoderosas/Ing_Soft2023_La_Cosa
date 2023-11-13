@@ -119,7 +119,6 @@ def play_card(request_body: PlayCardRequest):
     target_id = request_body.target_id
 
     with db_session:
-        
         _validate_play(card_token, id_player, target_id)
 
         card = MODEL_BASE.get_first_record_by_value(Card, card_token=card_token)

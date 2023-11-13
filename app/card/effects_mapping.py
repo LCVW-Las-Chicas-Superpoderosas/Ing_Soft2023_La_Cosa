@@ -110,7 +110,9 @@ EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
     'vigila tus espaldas': watch_your_back,
     'cambio de lugar!': swap_places,
-    'sospecha': suspicion
+    'sospecha': suspicion,
+    '¡mas vale que corras!': swap_places
+    # the card 'seduccion' make an exchange is handeled with the exchange cards
 }
 
 DEFENSE_CARDS_EFFECTS = {
