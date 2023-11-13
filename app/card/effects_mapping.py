@@ -59,6 +59,19 @@ def swap_places(target_id):
             player_turn = game.current_turn
             player = MODEL_BASE.get_first_record_by_value(Player, my_position=player_turn)
 
+            adjascent_players = game.get_adjascent_players()
+            left_player_id = adjascent_players[0]
+            right_player_id = adjascent_players[1]
+
+            if not target.is_alive:
+                return {
+                    'status': FAIL
+                }
+
+            if target.id != left_player_id and target.id != right_player_id:
+                return {
+                    'status': FAIL
+                }
             # swap
             target_position = target.my_position
             target.my_position = player.my_position
