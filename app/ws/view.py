@@ -131,7 +131,7 @@ async def manage_play_card(manager, player, target, card):
         player.id,
         data=json.dumps({
             'status_code': 200,
-            'detail': 'Card played successfully defend',
+            'detail': 'Card played successfully',
             'data': {
                 'type': 'play_card',
                 'hand': player.get_hand(),
@@ -145,7 +145,7 @@ async def manage_play_card(manager, player, target, card):
             target.id,
             data=json.dumps({
                 'status_code': 200,
-                'detail': f'Card {card.name}played successfully defend',
+                'detail': f'Card {card.name}played successfully',
                 'data': {
                     'type': 'play_card',
                     'hand': target.get_hand(),
@@ -297,7 +297,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                 }))
                     else:
                         card = mb.get_first_record_by_value(
-                            Card, card_token=player.last_card_token_played)
+                            Card, card_token=target.last_card_token_played)
                         if card is None:
                             raise HTTPException(status_code=400, detail='Card not found buddy')
                         await manage_play_card(manager, target, player, card)
