@@ -287,7 +287,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             raise HTTPException(status_code=400, detail='Card not found buddy')
 
                         try:
-                            card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower]
+                            card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower()]
                         except KeyError:
                             raise HTTPException(status_code=400, detail='Card is NOT IN DEFENSE DICT OR IS NOT DEFENSE!')
 
