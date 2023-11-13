@@ -2,11 +2,14 @@ from game.models import Game
 from card.models import CardType
 from model_base import Models
 from pony.orm import PrimaryKey, Optional, Required, Set
+from card.effects_mapping import im_good_here, no_thanks, you_failed
 
 
 DEFENSE_EFFECTS = {
-    'lanzallamas': ['Nada de barbacoas!'],
-    'seducción': ['Fallaste!', '¡No, gracias!']
+    'lanzallamas': [('Nada de barbacoas!', None)],
+    'seducción': [('Fallaste!', you_failed), ('¡No, gracias!', no_thanks)],
+    'cambio de lugar!': [('Aqui estoy bien', im_good_here)],
+    'mas vale que corras!': [('Aqui estoy bien', im_good_here)]
     # add more when u need to do your tickets
 }
 

@@ -128,11 +128,145 @@ def seduction(target_id):
             'status': FAIL
         }
 
+def analysis(target_id):
+    try:
+        with db_session:
+            target_user = MODEL_BASE.get_first_record_by_value(Player, id=target_id)
+
+            all_card_tokens = {card.card_token for card in target_user.cards}  # devuelve un set de card_tokens
+
+            return {
+                'status': SUCCESS,
+                'data': all_card_tokens
+            }
+    except Exception as e:
+
+        print(e)
+        return {
+            'status': FAIL
+        }
+
+def im_good_here(player_id):
+    #  lo unico que hace es agarrar cartas del mazo hasta agarrar una carta Alejate (Evita las de Panico)
+    #  esta carta solo cancela el efecto de otra,
+    #  asique en el effect solo hace lo mismo que todas las de defensa(linea de arriba)
+    first_token_number_for_stay_away_cards = 0
+    last_token_number_for_stay_away_cards = 88
+    first_token_number_for_panic = 89
+    last_token_number_for_panic = 108
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+        
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+                card_token = next_card.card_token
+                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
+                if  first_token_number_for_stay_away_cards <= card_token_id and card_token_id <= last_token_number_for_stay_away_cards:
+                    player.add_card(next_card)
+                    no_stay_away_card = False
+                    game.delete_first_card_in_deck()
+
+                if first_token_number_for_panic <= card_token_id and card_token_id <= last_token_number_for_panic:
+                    game.add_card_to_discard_pile(next_card.id)
+                    game.delete_first_card_in_deck()
+
+            return {
+                'status': SUCCESS,
+            }
+    except Exception as e:
+
+        print(e)
+        return {
+            'status': FAIL
+        }
+    
+def no_thanks(player_id):
+    #  lo unico que hace es agarrar cartas del mazo hasta agarrar una carta Alejate (Evita las de Panico)
+    #  esta carta solo cancela un intercambio, asique en el effect solo hace lo de las cartas de defensa(linea de arriba)
+    first_token_number_for_stay_away_cards = 0
+    last_token_number_for_stay_away_cards = 88
+    first_token_number_for_panic = 89
+    last_token_number_for_panic = 108
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+        
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+                card_token = next_card.card_token
+                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
+                if  first_token_number_for_stay_away_cards <= card_token_id and card_token_id <= last_token_number_for_stay_away_cards:
+                    player.add_card(next_card)
+                    no_stay_away_card = False
+                    game.delete_first_card_in_deck()
+
+                if first_token_number_for_panic <= card_token_id and card_token_id <= last_token_number_for_panic:
+                    game.add_card_to_discard_pile(next_card.id)
+                    game.delete_first_card_in_deck()
+
+            return {
+                'status': SUCCESS,
+            }
+    except Exception as e:
+
+        print(e)
+        return {
+            'status': FAIL
+        }
+
+def you_failed(player_id):
+    #  lo unico que hace es agarrar cartas del mazo hasta agarrar una carta Alejate (Evita las de Panico)
+    #  esta carta tiene que pasar control a otro jugador(al siguiente en orden de turnos), pero debe hacerse fuera del apply effect
+    first_token_number_for_stay_away_cards = 0
+    last_token_number_for_stay_away_cards = 88
+    first_token_number_for_panic = 89
+    last_token_number_for_panic = 108
+    try:
+        with db_session:
+            player = MODEL_BASE.get_first_record_by_value(Player, id=player_id)
+            game = player.game
+        
+            no_stay_away_card = True
+
+            while no_stay_away_card:
+                next_card = game.next_card_in_deck()
+                card_token = next_card.card_token
+                card_token_id = int(card_token[3:-4])  # Extrae el numero del card token string
+                if  first_token_number_for_stay_away_cards <= card_token_id and card_token_id <= last_token_number_for_stay_away_cards:
+                    player.add_card(next_card)
+                    no_stay_away_card = False
+                    game.delete_first_card_in_deck()
+
+                if first_token_number_for_panic <= card_token_id and card_token_id <= last_token_number_for_panic:
+                    game.add_card_to_discard_pile(next_card.id)
+                    game.delete_first_card_in_deck()
+
+            return {
+                'status': SUCCESS,
+            }
+    except Exception as e:
+
+        print(e)
+        return {
+            'status': FAIL
+        }
+
 
 EFFECTS_TO_PLAYERS = {
     'lanzallamas': flame_torch,
     'vigila tus espaldas': watch_your_back,
     'cambio de lugar!': swap_places,
     'sospecha': suspicion,
-    'seduccion': seduction
+    'seduccion': seduction,
+    'fallaste': you_failed,
+    'estoy bien aqui': im_good_here,
+    'analisis': analysis,
+    'no, gracias': no_thanks
 }
