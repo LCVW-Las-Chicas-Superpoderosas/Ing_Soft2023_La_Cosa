@@ -617,7 +617,7 @@ def get_top_card(id_game: int = Header(..., key='id-game')):
             )
         top_card = game.next_card_in_deck()
         top_card_type = top_card.type
-        breakpoint()
+
     return {
         'status_code': 200,
         'message': f'top card of {game.id} game',
