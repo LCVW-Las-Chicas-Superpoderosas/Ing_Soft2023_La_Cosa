@@ -221,7 +221,7 @@ class TestWs(unittest.TestCase):
             commit()
             payload = {
                 'content': {
-                    'type': 'defend',
+                    'type': 'defense',
                     'card_token': card.card_token,
                     'id_player': player[1].id,
                     'target_id': player[0].id
