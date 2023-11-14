@@ -13,8 +13,11 @@ from pydantic import BaseModel, ValidationError
 from card.effects_mapping import DEFENSE_CARDS_EFFECTS
 
 MODEL_BASE = ModelBase()
-manager = ConnectionManager()
+
+exchangeManager = ConnectionManager()
+playManager = ConnectionManager()
 chatManager = ConnectionManager()
+gameStatusManager = ConnectionManager()
 
 
 class Content(BaseModel):
@@ -182,7 +185,7 @@ async def manage_play_card(websocket, manager, player, target, card):
 @router.websocket('/ws/hand_play')
 async def hand_play_endpoint(websocket: WebSocket, id_player: int):
     mb = ModelBase()
-
+    manager = playManager
     await websocket.accept()
     manager.active_connections.append((websocket, id_player))
     try:
@@ -392,6 +395,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
 @router.websocket('/ws/game_status')
 async def game_status_ws(websocket: WebSocket):
     await websocket.accept()
+    manager = gameStatusManager
     manager.active_connections.append((websocket, None))
     request_data = None
     try:
@@ -426,7 +430,7 @@ async def game_status_ws(websocket: WebSocket):
 async def card_exchange(websocket: WebSocket, id_player: int):
 
     mb = ModelBase()
-
+    manager = exchangeManager
     await websocket.accept()
     manager.active_connections.append((websocket, id_player))
 
@@ -494,6 +498,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                             raise HTTPException(status_code=400, detail='Player is mad dead')
 
                         defense_cards = target.can_neglect_exchange()
+                        
 
                         if len(defense_cards) != 0:
                             # Len not 0 aka tiene defens

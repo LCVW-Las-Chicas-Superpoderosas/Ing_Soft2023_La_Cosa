@@ -5,8 +5,6 @@ from card.models import Card
 from pony.orm import Optional, PrimaryKey, Required, Set
 import json
 import random
-import os
-
 CARDS_PER_PERSON = 4
 
 
@@ -109,7 +107,9 @@ class Game(Models.Entity):
                 left = alive_players.filter(my_position=player.my_position-1).first()
                 right = alive_players.filter(my_position=player.my_position+1).first()
 
-            return [left.id, right.id]
+            return [
+                left.id if left else None,
+                right.id if left else None]
 
     def check_turn(self, user_position):
         return user_position == self.get_turns()
@@ -206,12 +206,12 @@ class Game(Models.Entity):
 
     def next_card_in_deck(self):
         # JSON list to List and get first card.
-        next_card_id = self.get_deck()[0]
+        with db_session:
+            next_card_id = self.get_deck()[0]
 
-        # Retrieve the card in the set
-        next_card = self.cards.select(id=next_card_id).first()
-
-        return next_card
+            # Retrieve the card in the set
+            next_card = self.cards.select(id=next_card_id).first()
+            return next_card
 
     def delete_first_card_in_deck(self):
         # JSON list to List and get first card.

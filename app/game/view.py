@@ -598,7 +598,7 @@ def get_top_card(id_game: int = Header(..., key='id-game')):
 
         game = MODELBASE.get_first_record_by_value(
             Game, id=id_game)
-        
+
         if game is None:
             raise HTTPException(
                 status_code=400,

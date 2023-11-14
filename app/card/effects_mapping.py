@@ -2,7 +2,7 @@ import random
 
 from model_base import ModelBase
 from player.models import Player
-from pony.orm import db_session
+from pony.orm import db_session, commit
 
 MODEL_BASE = ModelBase()
 
@@ -58,9 +58,10 @@ def swap_places(target_id):
 
             # get player who played the swap
             player_turn = game.current_turn
-            player = MODEL_BASE.get_first_record_by_value(Player, my_position=player_turn)
+            player = MODEL_BASE.get_first_record_by_value(Player, my_position=player_turn, game=game)
 
             # swap
+            
             target_position = target.my_position
             target.my_position = player.my_position
             player.my_position = target_position
@@ -69,9 +70,7 @@ def swap_places(target_id):
             # so it can finish the turn
             game.current_turn = player.my_position
 
-            target.flush()
-            player.flush()
-            game.flush()
+            commit()
             return {
                 'status': SUCCESS
             }
@@ -111,7 +110,7 @@ EFFECTS_TO_PLAYERS = {
     'vigila tus espaldas': watch_your_back,
     'cambio de lugar!': swap_places,
     'sospecha': suspicion,
-    '¡mas vale que corras!': swap_places
+    'mas vale que corras!': swap_places
     # the card 'seduccion' make an exchange is handeled with the exchange cards
 }
 
