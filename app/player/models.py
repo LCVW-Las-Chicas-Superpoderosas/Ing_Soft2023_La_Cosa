@@ -48,7 +48,7 @@ class Player(Models.Entity):
 
     def can_defend(self, card_name):
         cards = []
-        for name in DEFENSE_EFFECTS[card_name.lower()]:
+        for name in DEFENSE_EFFECTS.get(card_name.lower(), []):
             c = self.cards.select().filter(name=name).first()
             if c is not None:
                 cards.append(c.card_token)
