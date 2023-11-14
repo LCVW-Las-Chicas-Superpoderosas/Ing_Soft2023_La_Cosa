@@ -8,6 +8,8 @@ from model_base import initialize_database
 from pony.orm import db_session, commit
 from tests.test_utils import (create_data_test,
     delete_data_full_lobby, create_data_started_game_set_positions)
+from model_base import ModelBase
+from card.models import Card
 
 
 client = TestClient(router)
@@ -221,7 +223,7 @@ class TestWs(unittest.TestCase):
             commit()
             payload = {
                 'content': {
-                    'type': 'defend',
+                    'type': 'defense',
                     'card_token': card.card_token,
                     'id_player': player[1].id,
                     'target_id': player[0].id
@@ -255,3 +257,25 @@ class TestWs(unittest.TestCase):
 
         self.assertEqual(response['status_code'], 200)
         self.assertEqual(response['detail'], 'New message received')
+
+    @patch('player.models.Player.can_defend', lambda *args, **kwargs: [])
+    def test_logs_creation(self, *args, **kwargs):
+        with db_session:
+            card, chat, player, game = create_data_test()
+            game.status = 1
+            card_lanzallamas = ModelBase().get_first_record_by_value(Card, card_token='img22.jpg')
+            player.cards = [card_lanzallamas]
+            commit()
+            payload = {
+                'content': {
+                    'card_token': card.card_token,
+                    'type': 'play_card',
+                    'id_player': player[0].id,
+                    'target_id': player[1].id}
+            }
+            with client.websocket_connect('/ws/hand_play', params={'id_player': player[0].id}) as websocket:
+                websocket.send_text(json.dumps(payload))
+                data = json.loads(websocket.receive_text())
+            delete_data_full_lobby(card, chat, player, game)
+
+        self.assertEqual(data['data']['type'], 'play_card')

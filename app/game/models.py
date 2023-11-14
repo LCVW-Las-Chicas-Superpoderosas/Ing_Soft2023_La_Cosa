@@ -2,6 +2,7 @@ from enum import IntEnum
 
 from model_base import db_session, Models, ModelBase
 from card.models import Card
+from log.models import Log
 from pony.orm import Optional, PrimaryKey, Required, Set
 import json
 import random
@@ -32,6 +33,7 @@ class Game(Models.Entity):
     deck = Optional(str, nullable=True)
     discard_pile = Optional(str, nullable=True)
     clockwise = Required(bool, default=True)
+    logs = Optional('Log')
 
     def get_turns(self):
         # Convert the JSON list into a python list
