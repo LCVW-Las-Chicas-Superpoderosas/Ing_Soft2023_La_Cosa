@@ -27,7 +27,7 @@ class ConnectionManager:
 
     async def send_to(self, player_id: int, data: str, connection=None):
         for c in self.active_connections:
-            if c[1] == player_id and c[0]==connection:
+            if c[1] == player_id:
                 await c[0].send_text(data)
                 break
 
