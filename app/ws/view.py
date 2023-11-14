@@ -500,7 +500,6 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                         'defense_cards': defense_cards,
                                         'attacker_id': player.id,
                                         'attacker_name': player.name,
-                                        'card_being_played': card.name,
                                         'under_attack': True
                                     }
                                 }))
@@ -557,9 +556,9 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     id_player,
                                     data=json.dumps({
                                         'status_code': 200,
-                                        'detail': 'Target player defense succesfully',
+                                        'detail': 'Target player defend succesfully',
                                         'data': {
-                                            'type': 'defense',
+                                            'type': 'result',
                                             'hand': player.get_hand(),
                                             'under_attack': False
                                         }}))
@@ -567,9 +566,9 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     target.id,
                                     data=json.dumps({
                                         'status_code': 200,
-                                        'detail': 'Target player defense succesfully',
+                                        'detail': 'Target player defend succesfully',
                                         'data': {
-                                            'type': 'defense',
+                                            'type': 'result',
                                             'hand': target.get_hand(),
                                             'under_attack': False
                                         }}))
@@ -580,7 +579,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                         'status_code': 400,
                                         'detail': 'Player doesnt have that card',
                                         'data': {
-                                            'type': 'defense',
+                                            'type': 'result',
                                             'hand': player.get_hand(),
                                             'under_attack': False
                                         }
