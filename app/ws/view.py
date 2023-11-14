@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 
 from card.models import Card
+from game.models import Game
 from card.view import _apply_effect, _validate_play, router
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from game.models import GameStatus
@@ -11,11 +12,14 @@ from model_base import ConnectionManager, ModelBase
 from pony.orm import db_session, commit
 from pydantic import BaseModel, ValidationError
 from card.effects_mapping import DEFENSE_CARDS_EFFECTS
+from datetime import datetime
+from log.models import Log
+
 
 MODEL_BASE = ModelBase()
 manager = ConnectionManager()
 chatManager = ConnectionManager()
-
+logManager = ConnectionManager()
 
 class Content(BaseModel):
     type: str = None
@@ -162,6 +166,11 @@ async def manage_play_card(manager, player, target, card):
                 'effect_data': play_card_result['effect_data']
             }
         }))
+    # create the log message and add it to a list
+    logs = []
+    logs.append({'message': f'[{datetime.now().strftime("%H:%M:%S")}] {player.name} played {card.name}',
+                'time': datetime.now().strftime("%H:%M:%S")})
+
     if player is not None:
         await manager.send_to(
             target.id,
@@ -176,6 +185,12 @@ async def manage_play_card(manager, player, target, card):
                     'effect_data': play_card_result['effect_data']
                 }
             }))
+        # create the log message and add it to a list
+        logs.append({'message': f'[{datetime.now().strftime("%H:%M:%S")}] {player.name} played {card.name}',
+                    'time': datetime.now().strftime("%H:%M:%S")})
+    with db_session:
+        for log in logs:
+            MODEL_BASE.add_record(Log, message=log['message'], created_at=log['time'], game=player.game)
 
 
 # idk why but if i tried to add another router is not detected xd
@@ -678,6 +693,69 @@ async def chat_endpoint(websocket: WebSocket, id_player: int):
 
     except WebSocketDisconnect:
         await chatManager.disconnect(websocket, id_player)
+    except HTTPException as e:
+        await websocket.send_text(
+            json.dumps({
+                'status_code': e.status_code,
+                'detail': e.detail
+            }))
+
+
+async def broadcast_log_messages(game_id):
+
+    with db_session:
+
+        # Get the game
+        game = MODEL_BASE.get_first_record_by_value(Game, id=game_id)
+
+        # If player is not part of a game and the players don't belong to the game, return error
+        if game is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Player is not part of a game.')
+
+        if game.logs is not None:
+            # Get the logs that have not been sent from the game
+            logs_to_send = game.logs.select().filter(sent=False).order_by(Log.created_at)
+            aux = []
+            for log in logs_to_send:
+                aux.append(log.message)
+                log.sent = True
+            commit()
+
+            for connection, conn_id in logManager.active_connections:
+                try:
+                    await connection.send_text(json.dumps({
+                        'status_code': 200,
+                        'detail': 'New Log received',
+                        'data': {
+                        'type': 'log',
+                        'message': aux
+                        }
+                    }))
+
+                except WebSocketDisconnect:
+                    await logManager.disconnect(connection, conn_id)
+
+
+
+@router.websocket('/ws/log')
+async def logs_endpoint(websocket: WebSocket, id_player: int, game_id: int ):
+    await websocket.accept()
+    logManager.active_connections.append((websocket, id_player))
+    try:
+        while True:
+            try:
+                await broadcast_log_messages(game_id)
+            except asyncio.TimeoutError:
+                await websocket.send_text(
+                    json.dumps({
+                        'status_code': 400,
+                        'detail': 'Logs could not be sent.'
+                    }))
+
+    except WebSocketDisconnect:
+        await logManager.disconnect(websocket, id_player)
     except HTTPException as e:
         await websocket.send_text(
             json.dumps({
