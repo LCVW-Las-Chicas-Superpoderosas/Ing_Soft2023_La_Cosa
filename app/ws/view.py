@@ -287,7 +287,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             raise HTTPException(status_code=400, detail='Card not found buddy')
 
                         try:
-                            card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower]
+                            card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower()]
                         except KeyError:
                             raise HTTPException(status_code=400, detail='Card is NOT IN DEFENSE DICT OR IS NOT DEFENSE!')
 
@@ -499,7 +499,8 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                         'type': 'defend',
                                         'defense_cards': defense,
                                         'attacker_id': player.id,
-                                        'attacker_name': player.name
+                                        'attacker_name': player.name,
+                                        'under_attack': True
                                     }
                                 }))
                         else:
@@ -555,27 +556,32 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     id_player,
                                     data=json.dumps({
                                         'status_code': 200,
-                                        'detail': 'Result from exchange',
+                                        'detail': 'Target player defend succesfully',
                                         'data': {
                                             'type': 'result',
-                                            'hand': player.get_hand()
+                                            'hand': player.get_hand(),
+                                            'under_attack': False
                                         }}))
                                 await manager.send_to(
                                     target.id,
                                     data=json.dumps({
                                         'status_code': 200,
-                                        'detail': 'Result from exchange',
+                                        'detail': 'Target player defend succesfully',
                                         'data': {
                                             'type': 'result',
-                                            'hand': target.get_hand()
+                                            'hand': target.get_hand(),
+                                            'under_attack': False
                                         }}))
                             else:
-                                await websocket.send_text(
-                                    json.dumps({
+                                await manager.send_to(
+                                    id_player,
+                                    data=json.dumps({
                                         'status_code': 400,
                                         'detail': 'Player doesnt have that card',
                                         'data': {
-                                            'type': 'defend'
+                                            'type': 'result',
+                                            'hand': player.get_hand(),
+                                            'under_attack': False
                                         }
                                     }))
                         else:
