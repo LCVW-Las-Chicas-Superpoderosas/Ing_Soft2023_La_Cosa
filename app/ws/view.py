@@ -146,12 +146,12 @@ async def play_card(user, target_user, card):
             return _apply_effect(user, card)
 
 
-async def manage_play_card(manager, player, target, card):
+async def manage_play_card(websocket, manager, player, target, card):
     play_card_result = await play_card(player, target, card)
     play_card_result = play_card_result['data']
     await manager.send_to(
         player.id,
-        data=json.dumps({
+        connection=websocket, data=json.dumps({
             'status_code': 200,
             'detail': 'Card played successfully',
             'data': {
@@ -165,7 +165,7 @@ async def manage_play_card(manager, player, target, card):
     if player is not None:
         await manager.send_to(
             target.id,
-            data=json.dumps({
+            connection=websocket, data=json.dumps({
                 'status_code': 200,
                 'detail': f'Card {card.name}played successfully',
                 'data': {
@@ -224,7 +224,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             # Len not 0 aka tiene defens
                             await manager.send_to(
                                 target.id,
-                                data=json.dumps({
+                                connection=websocket, data=json.dumps({
                                     'status_code': 200,
                                     'detail': 'Target player can defense',
                                     'data': {
@@ -247,7 +247,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
 
                                 await manager.send_to(
                                     id_player,
-                                    data=json.dumps({
+                                    connection=websocket, data=json.dumps({
                                         'status_code': 200,
                                         'detail': f'Target player cant defense, exchanged card {card.id}',
                                         'data': {
@@ -256,7 +256,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
 
                                 await manager.send_to(
                                     target.id,
-                                    data=json.dumps({
+                                    connection=websocket, data=json.dumps({
                                         'status_code': 200,
                                         'detail': 'Target player need to exchange',
                                         'data': {
@@ -269,10 +269,10 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                 target.add_card(card)
 
                             else:
-                                await manage_play_card(manager, player, target, card)
+                                await manage_play_card(websocket, manager, player, target, card)
                     else:
                         player.last_card_token_played = request_data.content.card_token
-                        await manage_play_card(manager, player, None, card)
+                        await manage_play_card(websocket, manager, player, None, card)
 
             elif request_data.content.type == 'defense':
                 with db_session:
@@ -301,7 +301,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                 commit()
                                 await manager.send_to(
                                     id_player,
-                                    data=json.dumps({
+                                    connection=websocket, data=json.dumps({
                                         'status_code': 200,
                                         'detail': 'Target player defense succesfully',
                                         'data': {
@@ -311,7 +311,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                         }}))
                                 await manager.send_to(
                                     target.id,
-                                    data=json.dumps({
+                                    connection=websocket, data=json.dumps({
                                         'status_code': 200,
                                         'detail': 'Target player defense succesfully',
                                         'data': {
@@ -322,7 +322,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             else:
                                 await manager.send_to(
                                     id_player,
-                                    data=json.dumps({
+                                    connection=websocket, data=json.dumps({
                                         'status_code': 400,
                                         'detail': 'Player doesnt have that card',
                                         'data': {
@@ -333,13 +333,13 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     }))
                         else:
                             player.last_card_token_played = card.card_token
-                            await manage_play_card(manager, player, target, card)
+                            await manage_play_card(websocket, manager, player, target, card)
                     else:
                         card = mb.get_first_record_by_value(
                             Card, card_token=target.last_card_token_played)
                         if card is None:
                             raise HTTPException(status_code=400, detail='Card not found buddy')
-                        await manage_play_card(manager, target, player, card)
+                        await manage_play_card(websocket, manager, target, player, card)
 
             elif request_data.content and request_data.content.type == 'exchange_offert':
                 with db_session:
@@ -363,7 +363,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
 
                     await manager.send_to(
                         id_player,
-                        data=json.dumps({
+                        connection=websocket, data=json.dumps({
                             'status_code': 200,
                             'detail': 'Result from exchange',
                             'data': {
@@ -372,7 +372,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             }}))
                     await manager.send_to(
                         target.id,
-                        data=json.dumps({
+                        connection=websocket, data=json.dumps({
                             'status_code': 200,
                             'detail': 'Result from exchange',
                             'data': {
@@ -462,7 +462,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
 
                         await manager.send_to(
                             id_player,
-                            data=json.dumps({
+                            connection=websocket, data=json.dumps({
                                 'status_code': 200,
                                 'detail': 'Result from exchange',
                                 'data': {
@@ -471,7 +471,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                 }}))
                         await manager.send_to(
                             target.id,
-                            data=json.dumps({
+                            connection=websocket, data=json.dumps({
                                 'status_code': 200,
                                 'detail': 'Result from exchange',
                                 'data': {
@@ -499,7 +499,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                             # Len not 0 aka tiene defens
                             await manager.send_to(
                                 target.id,
-                                data=json.dumps({
+                                connection=websocket, data=json.dumps({
                                     'status_code': 200,
                                     'detail': 'Target player can defense',
                                     'data': {
@@ -521,7 +521,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
 
                             await manager.send_to(
                                 id_player,
-                                data=json.dumps({
+                                connection=websocket, data=json.dumps({
                                     'status_code': 200,
                                     'detail': f'Target player cant defense, exchanged card {card.id}',
                                     'data': {
@@ -530,7 +530,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
 
                             await manager.send_to(
                                 target.id,
-                                data=json.dumps({
+                                connection=websocket, data=json.dumps({
                                     'status_code': 200,
                                     'detail': 'Target player need to exchange',
                                     'data': {
@@ -566,7 +566,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                     commit()
                                     await manager.send_to(
                                         id_player,
-                                        data=json.dumps({
+                                        connection=websocket, data=json.dumps({
                                             'status_code': 200,
                                             'detail': 'Target player defend succesfully',
                                             'data': {
@@ -576,7 +576,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                             }}))
                                     await manager.send_to(
                                         target.id,
-                                        data=json.dumps({
+                                        connection=websocket, data=json.dumps({
                                             'status_code': 200,
                                             'detail': 'Target player defend succesfully',
                                             'data': {
@@ -587,7 +587,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                 else:
                                     await manager.send_to(
                                         id_player,
-                                        data=json.dumps({
+                                        connection=websocket, data=json.dumps({
                                             'status_code': 400,
                                             'detail': 'Player doesnt have that card',
                                             'data': {
@@ -598,7 +598,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                         }))
                             else:
                                 player.last_card_token_played = card.card_token
-                                await manage_play_card(manager, player, target, card)
+                                await manage_play_card(websocket, manager, player, target, card)
                         else:
                             card = mb.get_first_record_by_value(
                                 Card, card_token=target.last_card_token_played)
@@ -609,7 +609,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                             commit()
                             await manager.send_to(
                                 id_player,
-                                data=json.dumps({
+                                connection=websocket, data=json.dumps({
                                     'status_code': 200,
                                     'detail': f'Target player cant defense, exchanged card {card.id}',
                                     'data': {
@@ -618,7 +618,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
 
                             await manager.send_to(
                                 target.id,
-                                data=json.dumps({
+                                connection=websocket, data=json.dumps({
                                     'status_code': 200,
                                     'detail': 'Target player need to exchange',
                                     'data': {

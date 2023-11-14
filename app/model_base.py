@@ -25,10 +25,10 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection[0].send_text(message)
 
-    async def send_to(self, player_id: int, data: str):
-        for connection in self.active_connections:
-            if connection[1] == player_id:
-                await connection[0].send_text(data)
+    async def send_to(self, player_id: int, data: str, connection=None):
+        for c in self.active_connections:
+            if c[1] == player_id and c[0]==connection:
+                await c[0].send_text(data)
                 break
 
 
