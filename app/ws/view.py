@@ -226,7 +226,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                 target.id,
                                 data=json.dumps({
                                     'status_code': 200,
-                                    'detail': 'Target player can defend',
+                                    'detail': 'Target player can defense',
                                     'data': {
                                         'type': 'defense',
                                         'defense_cards': defense_cards,
@@ -245,7 +245,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     id_player,
                                     data=json.dumps({
                                         'status_code': 200,
-                                        'detail': f'Target player cant defend, exchanged card {card.id}',
+                                        'detail': f'Target player cant defense, exchanged card {card.id}',
                                         'data': {
                                             'type': 'exchange'
                                         }}))
@@ -299,7 +299,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     id_player,
                                     data=json.dumps({
                                         'status_code': 200,
-                                        'detail': 'Target player defend succesfully',
+                                        'detail': 'Target player defense succesfully',
                                         'data': {
                                             'type': 'defense',
                                             'hand': player.get_hand(),
@@ -309,7 +309,7 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                                     target.id,
                                     data=json.dumps({
                                         'status_code': 200,
-                                        'detail': 'Target player defend succesfully',
+                                        'detail': 'Target player defense succesfully',
                                         'data': {
                                             'type': 'defense',
                                             'hand': target.get_hand(),
@@ -486,18 +486,18 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                         if not player.is_alive:
                             raise HTTPException(status_code=400, detail='Player is mad dead')
 
-                        defense = target.can_neglect_exchange()
+                        defense_cards = target.can_neglect_exchange()
 
-                        if len(defense) != 0:
+                        if len(defense_cards) != 0:
                             # Len not 0 aka tiene defens
                             await manager.send_to(
                                 target.id,
                                 data=json.dumps({
                                     'status_code': 200,
-                                    'detail': 'Target player can defend',
+                                    'detail': 'Target player can defense',
                                     'data': {
-                                        'type': 'defend',
-                                        'defense_cards': defense,
+                                        'type': 'defense',
+                                        'defense_cards': defense_cards,
                                         'attacker_id': player.id,
                                         'attacker_name': player.name,
                                         'under_attack': True
@@ -512,7 +512,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                 id_player,
                                 data=json.dumps({
                                     'status_code': 200,
-                                    'detail': f'Target player cant defend, exchanged card {card.id}',
+                                    'detail': f'Target player cant defense, exchanged card {card.id}',
                                     'data': {
                                         'type': 'exchange'
                                     }}))
@@ -528,7 +528,7 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                                         'attacker_name': player.name
                                     }}))
 
-                elif request_data.content and request_data.content.type == 'defend':
+                elif request_data.content and request_data.content.type == 'defense':
                     with db_session:
                         player = _player_exists(id_player)
                         if not player.is_alive:
@@ -631,14 +631,18 @@ async def broadcast_chat_message(request_data):
         chat_message = f'[{datetime.now().strftime("%H:%M:%S")}] {player.name}: {chat_message}'
 
         for connection, conn_id in chatManager.active_connections:
-            await connection.send_text(json.dumps({
-                'status_code': 200,
-                'detail': 'New message received',
-                'data': {
-                    'type': 'chat_message',
-                    'message': chat_message
-                }
-            }))
+            try:
+                await connection.send_text(json.dumps({
+                    'status_code': 200,
+                    'detail': 'New message received',
+                    'data': {
+                        'type': 'chat_message',
+                        'message': chat_message
+                    }
+                }))  
+            except WebSocketDisconnect:
+                await chatManager.disconnect(connection, conn_id)
+
 
 
 @router.websocket('/ws/chat')

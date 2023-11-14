@@ -10,6 +10,7 @@ from tests.test_utils import (create_data_full_lobby,
     create_data_full_lobby_ep,
     create_data_game_not_min_players, create_data_game_not_waiting,
     create_data_incomplete_lobby, create_data_started_game,
+    create_data_started_game_top_card,
     create_data_test, create_data_cards_given,
     create_data_cards_given2, create_data_cards_given3,
     create_data_started_game_set_positions,
@@ -703,3 +704,23 @@ class TestDiscardPile(unittest.TestCase):
         self.assertEqual(
             response.json()['detail'],
             f'player({player_id}) is not playing any game...')
+
+
+class TestTopCard(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        initialize_database
+    
+    def test_top_card_endpoint(self):
+        with db_session:
+            card, chat, players, game = create_data_started_game_top_card()
+
+            headers = {
+                'id-game': str(game.id)
+            }
+
+            response = client.get('/game/top_card', headers=headers)
+
+            delete_data_full_lobby(card, chat, players, game)
+
+            self.assertEqual(response.status_code, 200)
