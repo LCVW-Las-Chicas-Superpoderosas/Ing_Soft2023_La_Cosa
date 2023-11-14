@@ -2,7 +2,7 @@ import asyncio
 import json
 from datetime import datetime
 
-from card.models import Card
+from card.models import Card, CardType
 from card.view import _apply_effect, _validate_play, router
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from game.models import GameStatus
@@ -241,6 +241,10 @@ async def hand_play_endpoint(websocket: WebSocket, id_player: int):
                             # we check if the card make a exchange
                             is_exchange = card.is_exchange()
                             if is_exchange:
+
+                                if card.type == CardType.INFECTED and player.id == target.game.the_thing:
+                                    target.infected = True
+
                                 await manager.send_to(
                                     id_player,
                                     data=json.dumps({
@@ -453,6 +457,9 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                         target.add_card(card)
                         commit()
 
+                        if card.type == CardType.INFECTED and player.id == target.game.the_thing:
+                            target.infected = True
+
                         await manager.send_to(
                             id_player,
                             data=json.dumps({
@@ -508,6 +515,10 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                             player.remove_card(card.id)
                             target.add_card(card)
                             commit()
+
+                            if card.type == CardType.INFECTED and player.id == target.game.the_thing:
+                                target.infected = True
+
                             await manager.send_to(
                                 id_player,
                                 data=json.dumps({
@@ -538,55 +549,83 @@ async def card_exchange(websocket: WebSocket, id_player: int):
                         if not target.is_alive:
                             raise HTTPException(status_code=400, detail='Target is mad dead')
 
-                        card = mb.get_first_record_by_value(
-                            Card, card_token=request_data.content.card_token)
-                        if card is None:
-                            raise HTTPException(status_code=400, detail='Card not found buddy')
+                        if request_data.content.do_defense:
+                            card = mb.get_first_record_by_value(
+                                Card, card_token=request_data.content.card_token)
+                            if card is None:
+                                raise HTTPException(status_code=400, detail='Card not found buddy')
 
-                        try:
-                            card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower()]
-                        except KeyError:
-                            raise HTTPException(status_code=400, detail='Card is NOT IN DEFENSE DICT OR IS NOT DEFENSE!')
+                            try:
+                                card_effect = DEFENSE_CARDS_EFFECTS[card.name.lower()]
+                            except KeyError:
+                                raise HTTPException(status_code=400, detail='Card is NOT IN DEFENSE DICT OR IS NOT DEFENSE!')
 
-                        if card_effect is None:
-                            if player.check_card_in_hand(card.id):
-                                player.remove_card(card.id)
-                                commit()
-                                await manager.send_to(
-                                    id_player,
-                                    data=json.dumps({
-                                        'status_code': 200,
-                                        'detail': 'Target player defend succesfully',
-                                        'data': {
-                                            'type': 'result',
-                                            'hand': player.get_hand(),
-                                            'under_attack': False
-                                        }}))
-                                await manager.send_to(
-                                    target.id,
-                                    data=json.dumps({
-                                        'status_code': 200,
-                                        'detail': 'Target player defend succesfully',
-                                        'data': {
-                                            'type': 'result',
-                                            'hand': target.get_hand(),
-                                            'under_attack': False
-                                        }}))
+                            if card_effect is None:
+                                if player.check_card_in_hand(card.id):
+                                    player.remove_card(card.id)
+                                    commit()
+                                    await manager.send_to(
+                                        id_player,
+                                        data=json.dumps({
+                                            'status_code': 200,
+                                            'detail': 'Target player defend succesfully',
+                                            'data': {
+                                                'type': 'result',
+                                                'hand': player.get_hand(),
+                                                'under_attack': False
+                                            }}))
+                                    await manager.send_to(
+                                        target.id,
+                                        data=json.dumps({
+                                            'status_code': 200,
+                                            'detail': 'Target player defend succesfully',
+                                            'data': {
+                                                'type': 'result',
+                                                'hand': target.get_hand(),
+                                                'under_attack': False
+                                            }}))
+                                else:
+                                    await manager.send_to(
+                                        id_player,
+                                        data=json.dumps({
+                                            'status_code': 400,
+                                            'detail': 'Player doesnt have that card',
+                                            'data': {
+                                                'type': 'result',
+                                                'hand': player.get_hand(),
+                                                'under_attack': False
+                                            }
+                                        }))
                             else:
-                                await manager.send_to(
-                                    id_player,
-                                    data=json.dumps({
-                                        'status_code': 400,
-                                        'detail': 'Player doesnt have that card',
-                                        'data': {
-                                            'type': 'result',
-                                            'hand': player.get_hand(),
-                                            'under_attack': False
-                                        }
-                                    }))
+                                player.last_card_token_played = card.card_token
+                                await manage_play_card(manager, player, target, card)
                         else:
-                            player.last_card_token_played = card.card_token
-                            await manage_play_card(manager, player, target, card)
+                            card = mb.get_first_record_by_value(
+                                Card, card_token=target.last_card_token_played)
+                            if card is None:
+                                raise HTTPException(status_code=400, detail='Card not found buddy')
+                            # removemos la carta que quiere dar
+                            player.remove_card(card.id)
+                            commit()
+                            await manager.send_to(
+                                id_player,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': f'Target player cant defense, exchanged card {card.id}',
+                                    'data': {
+                                        'type': 'exchange'
+                                    }}))
+
+                            await manager.send_to(
+                                target.id,
+                                data=json.dumps({
+                                    'status_code': 200,
+                                    'detail': 'Target player need to exchange',
+                                    'data': {
+                                        'type': 'exchange_offert',
+                                        'attacker_id': player.id,
+                                        'attacker_name': player.name
+                                    }}))
 
             except ValidationError as validation_error:
                 await websocket.send_text(

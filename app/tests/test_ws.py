@@ -200,7 +200,8 @@ class TestWs(unittest.TestCase):
                     'type': 'exchange_offert',
                     'card_token': card.card_token,
                     'id_player': player[0].id,
-                    'target_id': player[1].id
+                    'target_id': player[1].id,
+                    'do_defense': True
                 }
             }
             with client.websocket_connect('/ws/card_exchange', params={'id_player': player[0].id}) as websocket:
@@ -224,7 +225,8 @@ class TestWs(unittest.TestCase):
                     'type': 'defense',
                     'card_token': card.card_token,
                     'id_player': player[1].id,
-                    'target_id': player[0].id
+                    'target_id': player[0].id,
+                    'do_defense': True
                 }
             }
             with client.websocket_connect('/ws/card_exchange', params={'id_player': player[1].id}) as websocket:
